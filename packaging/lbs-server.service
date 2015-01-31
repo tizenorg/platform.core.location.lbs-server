@@ -1,0 +1,12 @@
+[Unit]
+Description=lbs server daemon
+After=tizen-runtime.target
+Requires=tizen-runtime.target
+
+[Service]
+Type=forking
+ExecStart=/etc/rc.d/rc5.d/S90lbs-server
+MemoryLimit=10M
+
+[Install]
+WantedBy=multi-user.target

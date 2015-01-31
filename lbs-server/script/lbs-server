@@ -1,0 +1,11 @@
+#!/bin/sh
+##/etc/init.d/lbs-server Lv : S90
+
+## This file is boot script of /usr/libexec/lbs-server
+
+if [ -x /usr/libexec/lbs-server ]; then
+	if [ ! -z "`pgrep lbs-server`" ]; then
+		/usr/bin/killall lbs-server
+	fi
+	/usr/libexec/lbs-server &
+fi
