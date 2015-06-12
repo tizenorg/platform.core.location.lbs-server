@@ -55,17 +55,16 @@ static void status_callback(GVariant *param, void *user_data)
 
 	int status = 0, method = 0;
 
-	g_variant_get (param, "(ii)", &method, &status);
+	g_variant_get(param, "(ii)", &method, &status);
 
 	MOD_NPS_LOGD("method(%d) status(%d)", method, status);
 
-	if(method != LBS_CLIENT_METHOD_NPS) return;
+	if (method != LBS_CLIENT_METHOD_NPS) return;
 
-	if (status == 3) {	//TODO:  LBS_STATUS_AVAILABLE ?
+	if (status == 3) {	/*TODO: LBS_STATUS_AVAILABLE ? */
 		MOD_NPS_LOGD("LBS_STATUS_AVAILABLE");
 		mod_nps->status_cb(TRUE, LOCATION_STATUS_2D_FIX, mod_nps->userdata);
-	}
-	else {
+	} else {
 		MOD_NPS_LOGD("LBS_STATUS_ACQUIRING/ERROR/UNAVAILABLE");
 		mod_nps->status_cb(FALSE, LOCATION_STATUS_NO_FIX, mod_nps->userdata);
 	}
@@ -79,13 +78,13 @@ static void position_callback(GVariant *param, void *user_data)
 	g_return_if_fail(mod_nps);
 	g_return_if_fail(mod_nps->pos_cb);
 
-	int method = 0, fields = 0 ,timestamp = 0 , level = 0;
+	int method = 0, fields = 0 , timestamp = 0 , level = 0;
 	double latitude = 0.0, longitude = 0.0, altitude = 0.0, speed = 0.0, direction = 0.0, climb = 0.0, horizontal = 0.0, vertical = 0.0;
 	GVariant *accuracy = NULL;
 
 	g_variant_get(param, "(iiidddddd@(idd))", &method, &fields, &timestamp, &latitude, &longitude, &altitude, &speed, &direction, &climb, &accuracy);
 
-	if(method != LBS_CLIENT_METHOD_NPS)
+	if (method != LBS_CLIENT_METHOD_NPS)
 		return;
 
 	g_variant_get(accuracy, "(idd)", &level, &horizontal, &vertical);
@@ -118,12 +117,10 @@ static void on_signal_callback(const gchar *sig, GVariant *param, gpointer user_
 	if (!g_strcmp0(sig, "PositionChanged")) {
 		MOD_NPS_LOGD("PositionChanged");
 		position_callback(param, user_data);
-	}
-	else if (!g_strcmp0(sig, "StatusChanged")) {
+	} else if (!g_strcmp0(sig, "StatusChanged")) {
 		MOD_NPS_LOGD("StatusChanged");
 		status_callback(param, user_data);
-	}
-	else {
+	} else {
 		MOD_NPS_LOGD("Invaild signal[%s]", sig);
 	}
 
@@ -142,13 +139,13 @@ static int start(gpointer handle, LocModStatusCB status_cb, LocModPositionExtCB 
 	mod_nps->userdata = userdata;
 
 	int ret = LBS_CLIENT_ERROR_NONE;
-	ret = lbs_client_create (LBS_CLIENT_METHOD_NPS, &(mod_nps->lbs_client));
+	ret = lbs_client_create(LBS_CLIENT_METHOD_NPS, &(mod_nps->lbs_client));
 	if (ret != LBS_CLIENT_ERROR_NONE || !mod_nps->lbs_client) {
 		MOD_NPS_LOGE("Fail to create lbs_client_h. Error[%d]", ret);
 		return LOCATION_ERROR_NOT_AVAILABLE;
 	}
 
-	ret = lbs_client_start (mod_nps->lbs_client, 1, LBS_CLIENT_LOCATION_CB | LBS_CLIENT_LOCATION_STATUS_CB, on_signal_callback, mod_nps);
+	ret = lbs_client_start(mod_nps->lbs_client, 1, LBS_CLIENT_LOCATION_CB | LBS_CLIENT_LOCATION_STATUS_CB, on_signal_callback, mod_nps);
 	if (ret != LBS_CLIENT_ERROR_NONE) {
 		if (ret == LBS_CLIENT_ERROR_ACCESS_DENIED) {
 			MOD_NPS_LOGE("Access denied[%d]", ret);
@@ -174,7 +171,7 @@ static int stop(gpointer handle)
 
 	int ret = LBS_CLIENT_ERROR_NONE;
 
-	ret = lbs_client_stop (mod_nps->lbs_client);
+	ret = lbs_client_stop(mod_nps->lbs_client);
 	if (ret != LBS_CLIENT_ERROR_NONE) {
 		MOD_NPS_LOGE("Fail to stop. Error[%d]", ret);
 		lbs_client_destroy(mod_nps->lbs_client);
@@ -186,7 +183,7 @@ static int stop(gpointer handle)
 	mod_nps->lbs_client = NULL;
 
 	if (mod_nps->status_cb) {
-		mod_nps->status_cb (FALSE, LOCATION_STATUS_NO_FIX, mod_nps->userdata);
+		mod_nps->status_cb(FALSE, LOCATION_STATUS_NO_FIX, mod_nps->userdata);
 	}
 
 	mod_nps->status_cb = NULL;
@@ -195,7 +192,7 @@ static int stop(gpointer handle)
 	return LOCATION_ERROR_NONE;
 }
 
-static int get_last_position(gpointer handle, LocationPosition ** position, LocationVelocity ** velocity, LocationAccuracy ** accuracy)
+static int get_last_position(gpointer handle, LocationPosition **position, LocationVelocity **velocity, LocationAccuracy **accuracy)
 {
 	MOD_NPS_LOGD("get_last_position");
 	ModNpsData *mod_nps = (ModNpsData *) handle;
@@ -278,7 +275,7 @@ static int get_last_position(gpointer handle, LocationPosition ** position, Loca
 	return LOCATION_ERROR_NONE;
 }
 
-LOCATION_MODULE_API gpointer init(LocModWpsOps * ops)
+LOCATION_MODULE_API gpointer init(LocModWpsOps *ops)
 {
 	MOD_NPS_LOGD("init");
 	g_return_val_if_fail(ops, NULL);

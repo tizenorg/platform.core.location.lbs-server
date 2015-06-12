@@ -1,6 +1,6 @@
-prefix=@prefix@
+prefix=@PREFIX@
 exec_prefix=${prefix}
-libdir=${prefix}/lib
+libdir=@LIB_DIR@
 includedir=${prefix}/include
 
 Name: lbs-server-plugin

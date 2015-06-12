@@ -66,17 +66,6 @@ typedef enum {
 	GEOFENCE_ERR_UNKNOWN			= -400,
 } geofence_error_t;
 
-#ifdef TIZEN_WEARABLE
-/**
- * This enumeration has XTRA request error type.
- */
-typedef enum {
-	XTRA_REQUEST_ERR_NONE		= 0,
-	XTRA_REQUEST_ERR_UNKNOWN	= -100,
-} xtra_request_error_t;
-#endif
-
-
 /**
  * This structure defines the GPS position data.
  */

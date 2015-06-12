@@ -59,17 +59,16 @@ static void status_callback(GVariant *param, void *user_data)
 
 	int status = 0, method = 0;
 
-	g_variant_get (param, "(ii)", &method, &status);
+	g_variant_get(param, "(ii)", &method, &status);
 
 	MOD_LOGD("method(%d) status(%d)", method, status);
 
 	if (method != LBS_CLIENT_METHOD_GPS) return;
 
-	if (status == 3) {	//TODO:  LBS_STATUS_AVAILABLE ?
+	if (status == 3) {	/*TODO: LBS_STATUS_AVAILABLE ? */
 		MOD_LOGD("LBS_STATUS_AVAILABLE");
 		gps_manager->status_cb(TRUE, LOCATION_STATUS_3D_FIX, gps_manager->userdata);
-	}
-	else {
+	} else {
 		MOD_LOGD("LBS_STATUS_ACQUIRING/ERROR/UNAVAILABLE. Status[%d]", status);
 		gps_manager->status_cb(FALSE, LOCATION_STATUS_NO_FIX, gps_manager->userdata);
 	}
@@ -99,7 +98,7 @@ static void satellite_callback(GVariant *param, void *user_data)
 	g_variant_get(sat_info, "a(iiii)", &sat_iter);
 	MOD_LOGD("timestamp [%d], satellite_used [%d], satellite_visible[%d]", timestamp, satellite_used, satellite_visible);
 	int tmp_prn = 0;
-	int num_of_used_prn = g_variant_iter_n_children (used_prn_iter);
+	int num_of_used_prn = g_variant_iter_n_children(used_prn_iter);
 	if (num_of_used_prn > 0) {
 		used_prn_array = (guint *)g_new0(guint, num_of_used_prn);
 		for (idx = 0; idx < num_of_used_prn; idx++) {
@@ -118,8 +117,8 @@ static void satellite_callback(GVariant *param, void *user_data)
 	GVariant *tmp_var = NULL;
 	for (idx = 0; idx < satellite_visible; idx++) {
 		gboolean used = FALSE;
-		tmp_var = g_variant_iter_next_value (sat_iter);
-		g_variant_get (tmp_var, "(iiii)", &prn, &elev, &azim, &snr);
+		tmp_var = g_variant_iter_next_value(sat_iter);
+		g_variant_get(tmp_var, "(iiii)", &prn, &elev, &azim, &snr);
 		if (used_prn_array != NULL) {
 			for (used_idx = 0; used_idx < satellite_used; used_idx++) {
 				if (prn == used_prn_array[used_idx]) {
@@ -128,7 +127,7 @@ static void satellite_callback(GVariant *param, void *user_data)
 				}
 			}
 		}
-		//MOD_LOGD("prn[%d] : used %d elev %d azim %d snr %d", prn, used, elev, azim, snr);
+		/*MOD_LOGD("prn[%d] : used %d elev %d azim %d snr %d", prn, used, elev, azim, snr); */
 		location_satellite_set_satellite_details(sat, idx, prn, used, elev, azim, snr);
 		g_variant_unref(tmp_var);
 	}
@@ -148,7 +147,7 @@ static void satellite_callback(GVariant *param, void *user_data)
 }
 
 #if 0
-static void nmea_callback(GeoclueNmea * nmea, int timestamp, char *data, gpointer userdata)
+static void nmea_callback(GeoclueNmea *nmea, int timestamp, char *data, gpointer userdata)
 {
 }
 #endif
@@ -160,13 +159,13 @@ static void position_callback(GVariant *param, void *user_data)
 	g_return_if_fail(gps_manager);
 	g_return_if_fail(gps_manager->pos_cb);
 
-	int method = 0, fields = 0 ,timestamp = 0 , level = 0;
+	int method = 0, fields = 0 , timestamp = 0 , level = 0;
 	double latitude = 0.0, longitude = 0.0, altitude = 0.0, speed = 0.0, direction = 0.0, climb = 0.0, horizontal = 0.0, vertical = 0.0;
 	GVariant *accuracy = NULL;
 
 	g_variant_get(param, "(iiidddddd@(idd))", &method, &fields, &timestamp, &latitude, &longitude, &altitude, &speed, &direction, &climb, &accuracy);
 
-	if(method != LBS_CLIENT_METHOD_GPS)
+	if (method != LBS_CLIENT_METHOD_GPS)
 		return;
 
 	g_variant_get(accuracy, "(idd)", &level, &horizontal, &vertical);
@@ -191,13 +190,13 @@ static void position_callback(GVariant *param, void *user_data)
 
 static void batch_callback(GVariant *param, void *user_data)
 {
-	MOD_LOGE("batch_callback");
+	MOD_LOGD("batch_callback");
 	GpsManagerData *gps_manager = (GpsManagerData *)user_data;
 	g_return_if_fail(gps_manager);
 	g_return_if_fail(gps_manager->batch_cb);
 
 	int num_of_location = 0;
-	g_variant_get (param, "(i)", &num_of_location);
+	g_variant_get(param, "(i)", &num_of_location);
 
 	gps_manager->batch_cb(TRUE, num_of_location, gps_manager->userdata);
 }
@@ -205,10 +204,9 @@ static void batch_callback(GVariant *param, void *user_data)
 static void on_signal_batch_callback(const gchar *sig, GVariant *param, gpointer user_data)
 {
 	if (!g_strcmp0(sig, "BatchChanged")) {
-		MOD_LOGE("BatchChanged");
+		MOD_LOGD("BatchChanged");
 		batch_callback(param, user_data);
-	}
-	else {
+	} else {
 		MOD_LOGD("Invaild signal[%s]", sig);
 	}
 }
@@ -216,18 +214,12 @@ static void on_signal_batch_callback(const gchar *sig, GVariant *param, gpointer
 static void on_signal_callback(const gchar *sig, GVariant *param, gpointer user_data)
 {
 	if (!g_strcmp0(sig, "SatelliteChanged")) {
-		MOD_LOGD("SatelliteChanged");
 		satellite_callback(param, user_data);
-	}
-	else if (!g_strcmp0(sig, "PositionChanged")) {
-		MOD_LOGD("PositionChanged");
+	} else if (!g_strcmp0(sig, "PositionChanged")) {
 		position_callback(param, user_data);
-	}
-	else if (!g_strcmp0(sig, "StatusChanged")) {
-		MOD_LOGD("StatusChanged");
+	} else if (!g_strcmp0(sig, "StatusChanged")) {
 		status_callback(param, user_data);
-	}
-	else {
+	} else {
 		MOD_LOGD("Invaild signal[%s]", sig);
 	}
 }
@@ -244,15 +236,15 @@ static int start_batch(gpointer handle, LocModBatchExtCB batch_cb, guint batch_i
 
 	int ret = LBS_CLIENT_ERROR_NONE;
 
-	ret = lbs_client_create (LBS_CLIENT_METHOD_GPS , &(gps_manager->lbs_client));
+	ret = lbs_client_create(LBS_CLIENT_METHOD_GPS , &(gps_manager->lbs_client));
 	if (ret != LBS_CLIENT_ERROR_NONE || !gps_manager->lbs_client) {
 		MOD_LOGE("Fail to create lbs_client_h. Error[%d]", ret);
 		return LOCATION_ERROR_NOT_AVAILABLE;
 	}
-	MOD_LOGE("gps-manger(%x)", gps_manager);
-	MOD_LOGE("batch (%x), user_data(%x)", gps_manager->batch_cb, gps_manager->userdata);
+	MOD_LOGD("gps-manger(%x)", gps_manager);
+	MOD_LOGD("batch (%x), user_data(%x)", gps_manager->batch_cb, gps_manager->userdata);
 
-	ret = lbs_client_start_batch (gps_manager->lbs_client, LBS_CLIENT_BATCH_CB, on_signal_batch_callback, batch_interval, batch_period, gps_manager);
+	ret = lbs_client_start_batch(gps_manager->lbs_client, LBS_CLIENT_BATCH_CB, on_signal_batch_callback, batch_interval, batch_period, gps_manager);
 	if (ret != LBS_CLIENT_ERROR_NONE) {
 		if (ret == LBS_CLIENT_ERROR_ACCESS_DENIED) {
 			MOD_LOGE("Access denied[%d]", ret);
@@ -282,7 +274,7 @@ static int start(gpointer handle, guint pos_update_interval, LocModStatusCB stat
 	gps_manager->userdata = userdata;
 
 	int ret = LBS_CLIENT_ERROR_NONE;
-	ret = lbs_client_create (LBS_CLIENT_METHOD_GPS , &(gps_manager->lbs_client));
+	ret = lbs_client_create(LBS_CLIENT_METHOD_GPS , &(gps_manager->lbs_client));
 	if (ret != LBS_CLIENT_ERROR_NONE || !gps_manager->lbs_client) {
 		MOD_LOGE("Fail to create lbs_client_h. Error[%d]", ret);
 		return LOCATION_ERROR_NOT_AVAILABLE;
@@ -290,7 +282,7 @@ static int start(gpointer handle, guint pos_update_interval, LocModStatusCB stat
 	MOD_LOGD("gps-manger(%x)", gps_manager);
 	MOD_LOGD("pos_cb (%x), user_data(%x)", gps_manager->pos_cb, gps_manager->userdata);
 
-	ret = lbs_client_start (gps_manager->lbs_client, pos_update_interval, LBS_CLIENT_LOCATION_CB | LBS_CLIENT_LOCATION_STATUS_CB | LBS_CLIENT_SATELLITE_CB, on_signal_callback, gps_manager);
+	ret = lbs_client_start(gps_manager->lbs_client, pos_update_interval, LBS_CLIENT_LOCATION_CB | LBS_CLIENT_LOCATION_STATUS_CB | LBS_CLIENT_SATELLITE_CB | LBS_CLIENT_NMEA_CB, on_signal_callback, gps_manager);
 	if (ret != LBS_CLIENT_ERROR_NONE) {
 		if (ret == LBS_CLIENT_ERROR_ACCESS_DENIED) {
 			MOD_LOGE("Access denied[%d]", ret);
@@ -314,7 +306,7 @@ static int stop_batch(gpointer handle)
 
 	int ret = LBS_CLIENT_ERROR_NONE;
 
-	ret = lbs_client_stop_batch (gps_manager->lbs_client);
+	ret = lbs_client_stop_batch(gps_manager->lbs_client);
 	if (ret != LBS_CLIENT_ERROR_NONE) {
 		MOD_LOGE("Fail to stop batch. Error[%d]", ret);
 		lbs_client_destroy(gps_manager->lbs_client);
@@ -343,7 +335,7 @@ static int stop(gpointer handle)
 
 	int ret = LBS_CLIENT_ERROR_NONE;
 
-	ret = lbs_client_stop (gps_manager->lbs_client);
+	ret = lbs_client_stop(gps_manager->lbs_client);
 	if (ret != LBS_CLIENT_ERROR_NONE) {
 		MOD_LOGE("Fail to stop. Error[%d]", ret);
 		lbs_client_destroy(gps_manager->lbs_client);
@@ -359,7 +351,7 @@ static int stop(gpointer handle)
 	gps_manager->lbs_client = NULL;
 
 	if (gps_manager->status_cb) {
-		gps_manager->status_cb (FALSE, LOCATION_STATUS_NO_FIX, gps_manager->userdata);
+		gps_manager->status_cb(FALSE, LOCATION_STATUS_NO_FIX, gps_manager->userdata);
 	}
 
 	gps_manager->status_cb = NULL;
@@ -369,7 +361,7 @@ static int stop(gpointer handle)
 	return LOCATION_ERROR_NONE;
 }
 
-static int get_nmea(gpointer handle, gchar ** nmea_data)
+static int get_nmea(gpointer handle, gchar **nmea_data)
 {
 	MOD_LOGD("get_nmea");
 	GpsManagerData *gps_manager = (GpsManagerData *) handle;
@@ -378,16 +370,17 @@ static int get_nmea(gpointer handle, gchar ** nmea_data)
 
 	gboolean ret = FALSE;
 	int timestamp = 0;
+
 	ret = lbs_client_get_nmea(gps_manager->lbs_client, &timestamp, nmea_data);
 	if (ret) {
-		MOD_LOGE("\t Error getting nmea: %d", ret);
+		MOD_LOGE("Error getting nmea: %d", ret);
 		return LOCATION_ERROR_NOT_AVAILABLE;
 	}
 
 	return LOCATION_ERROR_NONE;
 }
 
-static int get_last_position(gpointer handle, LocationPosition ** position, LocationVelocity ** velocity, LocationAccuracy ** accuracy)
+static int get_last_position(gpointer handle, LocationPosition **position, LocationVelocity **velocity, LocationAccuracy **accuracy)
 {
 	MOD_LOGD("get_last_position");
 	GpsManagerData *gps_manager = (GpsManagerData *) handle;
@@ -466,7 +459,7 @@ static int get_last_position(gpointer handle, LocationPosition ** position, Loca
 
 	level = LOCATION_ACCURACY_LEVEL_DETAILED;
 	*position = location_position_new(timestamp, latitude, longitude, altitude, status);
-	*velocity = location_velocity_new ((guint) timestamp, speed, direction, 0.0);
+	*velocity = location_velocity_new((guint) timestamp, speed, direction, 0.0);
 	*accuracy = location_accuracy_new(level, hor_accuracy, ver_accuracy);
 
 	return LOCATION_ERROR_NONE;
@@ -489,7 +482,8 @@ static int set_option(gpointer handle, const char *option)
 	return LOCATION_ERROR_NONE;
 }
 
-static int set_position_update_interval(gpointer handle, guint interval) {
+static int set_position_update_interval(gpointer handle, guint interval)
+{
 	MOD_LOGD("set_position_update_interval [%d]", interval);
 	GpsManagerData *gps_manager = (GpsManagerData *) handle;
 	g_return_val_if_fail(gps_manager, LOCATION_ERROR_NOT_AVAILABLE);
@@ -509,7 +503,7 @@ static int set_position_update_interval(gpointer handle, guint interval) {
 	return LOCATION_ERROR_NONE;
 }
 
-LOCATION_MODULE_API gpointer init(LocModGpsOps * ops)
+LOCATION_MODULE_API gpointer init(LocModGpsOps *ops)
 {
 	MOD_LOGD("init");
 
@@ -524,9 +518,11 @@ LOCATION_MODULE_API gpointer init(LocModGpsOps * ops)
 
 	Dl_info info;
 	if (dladdr(&get_last_position, &info) == 0) {
-		MOD_LOGD("Failed to get module name");
+		MOD_LOGE("Failed to get module name");
 	} else if (g_strrstr(info.dli_fname, "gps")) {
 		ops->get_nmea = get_nmea;
+	} else {
+		MOD_LOGE("Invalid module name");
 	}
 
 	GpsManagerData *gps_manager = g_new0(GpsManagerData, 1);

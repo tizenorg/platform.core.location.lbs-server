@@ -59,9 +59,6 @@ typedef enum {
 	GPS_EVENT_DELETE_GEOFENCE,					/**< Geofence is deleted(Stop geofence) */
 	GPS_EVENT_PAUSE_GEOFENCE,					/**< Geofence is paused */
 	GPS_EVENT_RESUME_GEOFENCE,					/**< Geofence is resumed */
-	#ifdef TIZEN_WEARABLE
-	GPS_EVENT_REQUEST_XTRA			= 0x0700,	/**< XTRA is requested */
-	#endif
 	GPS_EVENT_ERR_CAUSE				= 0xFFFF	/**< Some error is occurred */
 } gps_event_id_t;
 
@@ -266,26 +263,6 @@ typedef struct {
 	geofence_error_t error;
 } geofence_event_t;
 
-#ifdef TIZEN_WEARABLE
-/**
- * Type of XTRA request
- */
-typedef enum {
-	XTRA_REQUEST_TYPE_NONE = 0x00,
-	XTRA_REQUEST_TYPE_QCOM = 0x01,
-	XTRA_REQUEST_TYPE_BRCM = 0x02,
-	XTRA_REQEUST_TYPE_NUM,
-} xtra_request_type_t;
-
-/**
- * XTRA request information
- */
-typedef struct {
-	xtra_request_type_t xtra_id;
-	xtra_request_error_t error;
-} xtra_request_info_t;
-#endif
-
 /**
  * GPS event info
  */
@@ -310,11 +287,6 @@ typedef union {
 	geofence_transition_ev_info_t	geofence_transition_ind;
 	geofence_status_ev_info_t		geofence_status_ind;
 	geofence_event_t				geofence_event_rsp;
-
-	#ifdef TIZEN_WEARABLE
-	/** Callback related with XTRA. */
-	xtra_request_info_t	 xtra_request_ind;
-	#endif
 } gps_event_data_t;
 
 /**
@@ -338,7 +310,7 @@ typedef struct {
  * Callback function
  * LBS server needs to register a callback function with GPS OEM to receive asynchronous events.
  */
-typedef int (*gps_event_cb) (gps_event_info_t *gps_event_info, void *user_data);
+typedef int (*gps_event_cb)(gps_event_info_t *gps_event_info, void *user_data);
 
 /**
  * GPS action type
@@ -363,12 +335,6 @@ typedef enum {
 	GPS_ACTION_DELETE_GEOFENCE,
 	GPS_ACTION_PAUSE_GEOFENCE,
 	GPS_ACTION_RESUME_GEOFENCE,
-
-	#ifdef TIZEN_WEARABLE
-	GPS_ACTION_DOWNLOAD_XTRA,
-	GPS_ACTION_CONSUMER_CONNECTED,
-	GPS_ACTION_CONSUMER_DISCONNECTED,
-	#endif
 } gps_action_t;
 
 /**
@@ -440,14 +406,13 @@ typedef struct {
  */
 typedef struct {
 	/** Initialize plugin module and register callback function for event delivery. */
-	int (*init) (gps_event_cb gps_event_cb, void *user_data);
+	int (*init)(gps_event_cb gps_event_cb, void *user_data);
 
 	/** Deinitialize plugin module */
-	int (*deinit) (gps_failure_reason_t *reason_code);
+	int (*deinit)(gps_failure_reason_t *reason_code);
 
 	/** Request specific action to plugin module */
-	int (*request) (gps_action_t gps_action, void *gps_action_data,
-			gps_failure_reason_t *reason_code);
+	int (*request)(gps_action_t gps_action, void *gps_action_data, gps_failure_reason_t *reason_code);
 } gps_plugin_interface;
 
 const gps_plugin_interface *get_gps_plugin_interface();

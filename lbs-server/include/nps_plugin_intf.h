@@ -27,13 +27,13 @@
 #define NPS_PLUGIN_PATH	"/usr/lib/libSLP-nps-plugin.so"
 
 typedef struct {
-	double latitude;	// decimal degree (WGS84)
-	double longitude;	// decimal degree (WGS84)
-	double hpe;			// in meters (@ 95% confidence)
-	double altitude;	// in meters
-	double speed;		// in km/hr (negative value for unknown speed)
-	double bearing;		// degree from north clockwise (+90 is East) (negative value for unknown)
-	unsigned long age;	// number of milliseconds elapsed since location was calculated
+	double latitude;	/* decimal degree (WGS84) */
+	double longitude;	/* decimal degree (WGS84) */
+	double hpe;			/* in meters (@ 95% confidence) */
+	double altitude;	/* in meters */
+	double speed;		/* in km/hr (negative value for unknown speed) */
+	double bearing;		/* degree from north clockwise (+90 is East) (negative value for unknown) */
+	unsigned long age;	/* number of milliseconds elapsed since location was calculated */
 } Plugin_LocationInfo;
 
 
@@ -46,21 +46,13 @@ typedef void (*OfflineTokenCallback)(void *arg, const unsigned char *token, unsi
 typedef void (*CancelCallback)(void *arg);
 
 typedef struct {
-	int (*load )(void);
-	int (*unload) (void);
-	int (*start) (unsigned long period, LocationCallback cb, void *arg, void **handle);
-	int (*stop) (void *handle, CancelCallback cb, void *arg);
-	void (*getOfflineToken)(const unsigned char *key,
-				unsigned int keyLengh,
-				OfflineTokenCallback cb,
-				void *arg);
-	int (*offlineLocation) (const unsigned char *key,
-				unsigned int keyLength,
-				const unsigned char *token,
-				unsigned int tokenSize,
-				LocationCallback cb,
-				void *arg);
-	void (*cellLocation) (LocationCallback callback, void* arg);
+	int (*load)(void);
+	int (*unload)(void);
+	int (*start)(unsigned long period, LocationCallback cb, void *arg, void **handle);
+	int (*stop)(void *handle, CancelCallback cb, void *arg);
+	void (*getOfflineToken)(const unsigned char *key, unsigned int keyLengh, OfflineTokenCallback cb, void *arg);
+	int (*offlineLocation)(const unsigned char *key, unsigned int keyLength, const unsigned char *token, unsigned int tokenSize, LocationCallback cb, void *arg);
+	void (*cellLocation)(LocationCallback callback, void *arg);
 } nps_plugin_interface;
 
 const nps_plugin_interface *get_nps_plugin_interface();

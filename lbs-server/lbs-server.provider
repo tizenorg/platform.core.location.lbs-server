@@ -1,4 +1,4 @@
-[Gps Manager Provider]
+[LBS Server Provider]
 Name=Agps
 Service=org.tizen.lbs.Providers.LbsServer
 Path=/org/tizen/lbs/Providers/LbsServer
