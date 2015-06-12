@@ -1,0 +1,43 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+PROJECT(com.samsung.lbs-server C)
+
+SET(PREFIX ${CMAKE_INSTALL_PREFIX})
+#SET(LIB_DIR "${PREFIX}/lib")
+#SET(INCLUDE_DIR "${PREFIX}/include")
+SET(BIN_DIR "${PREFIX}/bin")
+
+#Dependencies
+SET(common_dp "glib-2.0 lbs-dbus dlog gio-2.0")
+SET(server_dp "${common_dp} network tapi vconf vconf-internal-keys gthread-2.0  gio-unix-2.0 capi-network-wifi")
+SET(module_dp "${common_dp} gmodule-2.0 lbs-location")
+
+# Set required packages
+INCLUDE(FindPkgConfig)
+
+## SERVER
+pkg_check_modules(server_pkgs REQUIRED ${server_dp})
+FOREACH(flag ${server_pkgs_CFLAGS})
+	SET(SERVER_EXTRA_CFLAGS "${SERVER_EXTRA_CFLAGS} ${flag}")
+ENDFOREACH(flag)
+
+## MODULE
+pkg_check_modules(module_pkgs REQUIRED ${module_dp})
+FOREACH(flag ${module_pkgs_CFLAGS})
+	SET(MODULE_EXTRA_CFLAGS "${MODULE_EXTRA_CFLAGS} ${flag}")
+ENDFOREACH(flag)
+
+SET(EXTRA_CFLAGS "${EXTRA_CFLAGS}  -Wl,-zdefs -fvisibility=hidden ")
+
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_CFLAGS}")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wextra -fvisibility=hidden -fPIC")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-parameter -Wno-missing-field-initializers -Wno-missing-declarations -Wall -Wcast-align -Wno-sign-compare")
+
+ADD_DEFINITIONS("-DFEATURE_DLOG_DEBUG")
+ADD_DEFINITIONS("-DPREFIX=\"${CMAKE_INSTALL_PREFIX}\"")
+ADD_DEFINITIONS(" -DEXPORT_API=\"__attribute__((visibility(\\\"default\\\")))\" ")
+
+MESSAGE(${CMAKE_C_FLAGS})
+MESSAGE(${CMAKE_EXE_LINKER_FLAGS})
+
+ADD_SUBDIRECTORY(module)
+ADD_SUBDIRECTORY(lbs-server)
