@@ -29,6 +29,7 @@ INSTALL(FILES script/lbs-server DESTINATION /etc/rc.d/init.d)
 
 CONFIGURE_FILE(lbs-server-plugin.pc.in lbs-server-plugin.pc @ONLY)
 INSTALL(FILES lbs-server-plugin.pc DESTINATION ${LIB_DIR}/pkgconfig)
+INSTALL(FILES config/lbs-server.conf DESTINATION ${SYSCONF_DIR}/dbus-1/system.d)
 
 ADD_EXECUTABLE(${PROJECT_NAME} ${SERVER_SRCS})
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${server_pkgs_LDFLAGS} -lm)

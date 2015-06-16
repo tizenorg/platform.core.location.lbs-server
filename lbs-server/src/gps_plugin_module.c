@@ -29,7 +29,7 @@
 #include "setting.h"
 #include "debug_util.h"
 
-#define SPECIFIC_PLUGIN_PATH_PREFIX	"/usr/lib/libSLP-lbs-plugin-"
+#define SPECIFIC_PLUGIN_PATH_PREFIX	LIB_DIR"/liblbs-server-plugin-"
 #define SPECIFIC_PLUGIN_PATH_POSTFIX	".so"
 
 static const gps_plugin_interface *g_plugin = NULL;

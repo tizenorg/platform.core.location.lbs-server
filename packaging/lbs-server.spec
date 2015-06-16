@@ -1,6 +1,6 @@
 Name:       lbs-server
 Summary:    LBS Server for Tizen
-Version:    0.6.7
+Version:    0.6.8
 Release:    1
 Group:		Location/Service
 License:	Apache-2.0
@@ -27,7 +27,7 @@ Requires:  sys-assert
 
 %description
 LBS Server for Tizen
-LBS Server provides geographical location information 
+LBS Server provides geographical location information
 
 
 %package -n location-lbs-server
@@ -37,7 +37,7 @@ Requires:   %{name} = %{version}-%{release}
 
 %description -n location-lbs-server
 Client of LBS Server for Tizen
-This package provides geographical location information received from LBS Server 
+This package provides geographical location information received from LBS Server
 
 
 %package -n lbs-server-plugin-devel
@@ -70,7 +70,7 @@ export FFLAGS="$FFLAGS -DTIZEN_DEBUG_ENABLE"
 
 MAJORVER=`echo %{version} | awk 'BEGIN {FS="."}{print $1}'`
 cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix} -DFULLVER=%{version} -DMAJORVER=${MAJORVER} \
-        -DLIB_DIR=%{_libdir} -DINCLUDE_DIR=%{_includedir} \
+        -DLIB_DIR=%{_libdir} -DINCLUDE_DIR=%{_includedir} -DSYSCONF_DIR=%{_sysconfdir} \
 #%if 0%{?model_build_feature_location_position_wps}
 #    -DENABLE_WPS=YES \
 #%endif
@@ -122,9 +122,9 @@ rm -rf %{buildroot}
 %{_bindir}/lbs-server
 /usr/share/dbus-1/system-services/org.tizen.lbs.Providers.LbsServer.service
 #/usr/share/lbs/lbs-server.provider
+%config %{_sysconfdir}/dbus-1/system.d/lbs-server.conf
 /etc/rc.d/init.d/lbs-server
 /etc/rc.d/rc5.d/S90lbs-server
-#/etc/rc.d/*
 %{_libdir}/systemd/system/lbs-server.service
 %{_libdir}/systemd/system/multi-user.target.wants/lbs-server.service
 /opt/etc/dump.d/module.d/dump_gps.sh

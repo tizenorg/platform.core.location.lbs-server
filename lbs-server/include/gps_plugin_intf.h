@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-#define GPS_PLUGIN_PATH	"/usr/lib/libSLP-lbs-plugin.so"
+#define GPS_PLUGIN_PATH	LIB_DIR"/libSLP-lbs-plugin.so"
 #define MAX_REQUESTER_ID_LEN	(128)
 #define MAX_CLIENT_NAME_LEN	(128)
 #define MAX_SUPL_URL_LEN	(128)

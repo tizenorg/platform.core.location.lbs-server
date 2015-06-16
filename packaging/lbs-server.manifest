@@ -6,7 +6,6 @@
 			<label name="location_fw::client" />
 			<label name="location_fw::db" />
 			<label name="location_fw::vconf" />
-			<label name="location_fw::maps" />
 			<label name="location_fw::geofence" />
 		</provide>
 		<request>
@@ -45,6 +44,7 @@
 		<filesystem path="/etc/rc.d/init.d/lbs-server" label="_" exec_label="none" />
 		<filesystem path="/etc/rc.d/rc5.d/S90lbs-server" label="_" exec_label="none" />
 		<filesystem path="/usr/bin/lbs-server" label="_" exec_label="location_fw" />
+		<!--This tag is for Tizen 2.4
 		<dbus name="org.tizen.lbs.Providers.LbsServer" own="location_fw" bus="system">
 			<node name="/org/tizen/lbs/Providers/LbsServer">
 				<interface name="org.tizen.lbs.Manager">
@@ -64,6 +64,7 @@
 				</interface>
 			</node>
 		</dbus>
+		-->
 	</assign>
 	<request>
 		<domain name="location_fw" />
