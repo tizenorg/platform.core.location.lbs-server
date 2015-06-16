@@ -6,7 +6,6 @@
 			<label name="location_fw::client" />
 			<label name="location_fw::db" />
 			<label name="location_fw::vconf" />
-			<label name="location_fw::maps" />
 			<label name="location_fw::geofence" />
 		</provide>
 		<request>

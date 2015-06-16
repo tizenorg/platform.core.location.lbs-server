@@ -27,7 +27,7 @@ Requires:  sys-assert
 
 %description
 LBS Server for Tizen
-LBS Server provides geographical location information 
+LBS Server provides geographical location information
 
 
 %package -n location-lbs-server
@@ -37,7 +37,7 @@ Requires:   %{name} = %{version}-%{release}
 
 %description -n location-lbs-server
 Client of LBS Server for Tizen
-This package provides geographical location information received from LBS Server 
+This package provides geographical location information received from LBS Server
 
 
 %package -n lbs-server-plugin-devel
