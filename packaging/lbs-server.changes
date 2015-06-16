@@ -1,3 +1,9 @@
+[Version]	lbs-server_0.6.8
+[Date]		16 Jun 2015
+[Title]		Cynara was applied.
+[Developer]	Young-Ae Kang <youngae.kang@samsung.com>
+
+================================================================================
 [Version]	lbs-server_0.6.7
 [Date]		12 Jun 2015
 [Title]		The user and group of lbs-server process was changed to system when it is activated by DBus automatically.
@@ -6,7 +12,6 @@
 [Developer]	Young-Ae Kang <youngae.kang@samsung.com>
 
 ================================================================================
-
 [Version]	lbs-server_0.6.4
 [Date]		17 Apr 2015
 [Title]		Dbus path changed to support auto activation

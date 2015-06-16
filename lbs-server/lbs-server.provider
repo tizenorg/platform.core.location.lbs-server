@@ -1,8 +1,0 @@
-[LBS Server Provider]
-Name=Agps
-Service=org.tizen.lbs.Providers.LbsServer
-Path=/org/tizen/lbs/Providers/LbsServer
-Requires=RequiresLocation
-Provides=ProvidesUpdates
-Accuracy=Detailed
-Interfaces=org.tizen.lbs.Manager;org.tizen.lbs.Position;org.tizen.lbs.Nmea;org.tizen.lbs.Satellite
