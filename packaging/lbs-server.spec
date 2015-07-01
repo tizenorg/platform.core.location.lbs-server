@@ -101,11 +101,11 @@ rm -rf %{buildroot}
 %post
 
 %ifarch %arm
-	vconftool2 set -t int "db/location/replay/ReplayEnabled" "0" -s "tizen::vconf::platform::rw" -i -g 6514 -f
-	vconftool2 set -t int "db/location/replay/ReplayMode" "1" -s "tizen::vconf::platform::rw" -i -g 6514 -f
+	vconftool set -t int "db/location/replay/ReplayEnabled" "0" -s "tizen::vconf::platform::rw" -g 6514 -f
+	vconftool set -t int "db/location/replay/ReplayMode" "1" -s "tizen::vconf::platform::rw" -g 6514 -f
 %else
-	vconftool2 set -t int "db/location/replay/ReplayEnabled" "1" -s "tizen::vconf::platform::rw" -i -g 6514 -f
-	vconftool2 set -t int "db/location/replay/ReplayMode" "0" -s "tizen::vconf::platform::rw" -i -g 6514 -f
+	vconftool set -t int "db/location/replay/ReplayEnabled" "1" -s "tizen::vconf::platform::rw" -g 6514 -f
+	vconftool set -t int "db/location/replay/ReplayMode" "0" -s "tizen::vconf::platform::rw" -g 6514 -f
 %endif
 
 %post -n location-lbs-server
