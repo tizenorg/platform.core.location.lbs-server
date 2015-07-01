@@ -4,12 +4,12 @@ After=tizen-runtime.target
 Requires=tizen-runtime.target
 
 [Service]
-Type=forking
-ExecStart=/etc/rc.d/rc5.d/S90lbs-server
+#Type=forking
+#ExecStart=/etc/rc.d/rc5.d/S90lbs-server
+ExecStart=/usr/bin/lbs-server
 MemoryLimit=10M
 User=system
 Group=system
-SmackProcessLabel=location_fw
 
 [Install]
 WantedBy=multi-user.target
