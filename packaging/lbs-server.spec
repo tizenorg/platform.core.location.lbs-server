@@ -89,16 +89,26 @@ chmod 755 %{buildroot}/etc/rc.d/init.d/lbs-server
 mkdir -p %{buildroot}/etc/rc.d/rc5.d
 ln -sf ../init.d/lbs-server %{buildroot}/etc/rc.d/rc5.d/S90lbs-server
 
+mkdir -p %{buildroot}/opt/usr
+install -m 755 lbs-server/script/vconf-location.sh %{buildroot}/opt/usr
+#cp -a lbs-server/script/vconf-location.sh %{buildroot}/opt/usr/vconf-location.sh
+
+
 %define GPS_DUMP_DIR /opt/etc/dump.d/module.d
 
 mkdir -p %{buildroot}/%{GPS_DUMP_DIR}
 cp -a lbs-server/script/dump_gps.sh %{buildroot}/%{GPS_DUMP_DIR}/dump_gps.sh
+
 
 %clean
 rm -rf %{buildroot}
 
 
 %post
+chmod a+x /opt/usr/vconf-location.sh
+. /opt/usr/vconf-location.sh
+rm /opt/usr/vconf-location.sh
+
 
 %ifarch %arm
 	vconftool set -t int "db/location/replay/ReplayEnabled" "0" -s "tizen::vconf::platform::rw" -g 6514 -f
@@ -128,6 +138,7 @@ rm -rf %{buildroot}
 %{_libdir}/systemd/system/lbs-server.service
 %{_libdir}/systemd/system/multi-user.target.wants/lbs-server.service
 /opt/etc/dump.d/module.d/dump_gps.sh
+/opt/usr/vconf-location.sh
 
 %files -n location-lbs-server
 %manifest location-lbs-server.manifest
