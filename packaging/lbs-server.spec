@@ -1,29 +1,29 @@
-Name:       lbs-server
-Summary:    LBS Server for Tizen
-Version:    0.6.8
-Release:    1
-Group:		Location/Service
-License:	Apache-2.0
-Source0:    %{name}-%{version}.tar.gz
-Source1:    lbs-server.service
-Source2:    lbs-server.manifest
-Source3:    location-lbs-server.manifest
-BuildRequires:  cmake
-#BuildRequires:  model-build-features
-BuildRequires:  pkgconfig(glib-2.0)
-BuildRequires:  pkgconfig(network)
-BuildRequires:  pkgconfig(tapi)
-BuildRequires:  pkgconfig(vconf)
-BuildRequires:  pkgconfig(dlog)
-BuildRequires:  pkgconfig(lbs-location)
-BuildRequires:  pkgconfig(lbs-dbus)
-BuildRequires:  pkgconfig(gio-unix-2.0)
-BuildRequires:  pkgconfig(capi-network-wifi)
-BuildRequires:  pkgconfig(gio-2.0)
-BuildRequires:  pkgconfig(vconf-internal-keys)
-BuildRequires:  pkgconfig(gthread-2.0)
-BuildRequires:  pkgconfig(gmodule-2.0)
-Requires:  sys-assert
+Name:    lbs-server
+Summary: LBS Server for Tizen
+Version: 0.6.8
+Release: 1
+Group:   Location/Service
+License: Apache-2.0
+Source0: %{name}-%{version}.tar.gz
+Source1: lbs-server.service
+Source2: lbs-server.manifest
+Source3: location-lbs-server.manifest
+BuildRequires: cmake
+#BuildRequires: model-build-features
+BuildRequires: pkgconfig(glib-2.0)
+BuildRequires: pkgconfig(network)
+BuildRequires: pkgconfig(tapi)
+BuildRequires: pkgconfig(vconf)
+BuildRequires: pkgconfig(dlog)
+BuildRequires: pkgconfig(lbs-location)
+BuildRequires: pkgconfig(lbs-dbus)
+BuildRequires: pkgconfig(gio-unix-2.0)
+BuildRequires: pkgconfig(capi-network-wifi)
+BuildRequires: pkgconfig(gio-2.0)
+BuildRequires: pkgconfig(vconf-internal-keys)
+BuildRequires: pkgconfig(gthread-2.0)
+BuildRequires: pkgconfig(gmodule-2.0)
+Requires: sys-assert
 
 %description
 LBS Server for Tizen
@@ -81,9 +81,9 @@ make %{?jobs:-j%jobs}
 rm -rf %{buildroot}
 %make_install
 
-mkdir -p %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants
-install -m 644 %{SOURCE1} %{buildroot}%{_libdir}/systemd/system/lbs-server.service
-ln -s ../lbs-server.service %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants/lbs-server.service
+mkdir -p %{buildroot}%{_unitdir}/multi-user.target.wants
+install -m 644 %{SOURCE1} %{buildroot}%{_unitdir}/lbs-server.service
+%install_service multi-user.target.wants lbs-server.service
 
 chmod 755 %{buildroot}/etc/rc.d/init.d/lbs-server
 mkdir -p %{buildroot}/etc/rc.d/rc5.d
@@ -130,12 +130,11 @@ rm /opt/usr/vconf-location.sh
 %defattr(-,system,system,-)
 %{_bindir}/lbs-server
 /usr/share/dbus-1/system-services/org.tizen.lbs.Providers.LbsServer.service
-#/usr/share/lbs/lbs-server.provider
 %config %{_sysconfdir}/dbus-1/system.d/lbs-server.conf
 /etc/rc.d/init.d/lbs-server
 /etc/rc.d/rc5.d/S90lbs-server
-%{_libdir}/systemd/system/lbs-server.service
-%{_libdir}/systemd/system/multi-user.target.wants/lbs-server.service
+%{_unitdir}/lbs-server.service
+%{_unitdir}/multi-user.target.wants/lbs-server.service
 /opt/etc/dump.d/module.d/dump_gps.sh
 /opt/usr/vconf-location.sh
 
