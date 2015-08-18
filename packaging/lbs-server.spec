@@ -55,11 +55,6 @@ cp %{SOURCE1} .
 cp %{SOURCE2} .
 cp %{SOURCE3} .
 
-%ifarch %{arm}
-%define ARCH armel
-%else
-%define ARCH x86
-%endif
 
 %build
 %define _prefix /usr
@@ -101,10 +96,7 @@ rm -rf %{buildroot}
 
 %post
 
-%ifarch %arm
-	vconftool set -t int "db/location/replay/ReplayEnabled" "0" -s "tizen::vconf::platform::rw" -g 6514 -f
-	vconftool set -t int "db/location/replay/ReplayMode" "1" -s "tizen::vconf::platform::rw" -g 6514 -f
-%else if %aarch64
+%ifarch %{arm} aarch64
 	vconftool set -t int "db/location/replay/ReplayEnabled" "0" -s "tizen::vconf::platform::rw" -g 6514 -f
 	vconftool set -t int "db/location/replay/ReplayMode" "1" -s "tizen::vconf::platform::rw" -g 6514 -f
 %else
