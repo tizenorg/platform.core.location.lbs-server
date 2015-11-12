@@ -123,13 +123,13 @@ static int generate_nmea_log_file(char *filepath)
 {
 	int idx = 0;
 	int fd = 0;
-	char fn[MAX_NMEA_LOG_FILE_PATH];
+	char fn[MAX_NMEA_LOG_FILE_PATH] = {0,};
 
 	for (idx = 0; idx < MAX_NMEA_RAW_DATA_LOG_FILE_CNT; idx++) {
 		g_snprintf(fn, MAX_NMEA_LOG_FILE_PATH, "%s%03d.txt", NMEA_LOGGING_FILE_PATH, idx);
 		if ((fd = access(fn, R_OK)) == -1) {
 			LOG_GPS(DBG_LOW, "Next log file [%s]", fn);
-			g_strlcpy(filepath, fn, strlen(fn));
+			g_strlcpy(filepath, fn, strlen(fn) + 1);
 			return 0;
 		}
 	}

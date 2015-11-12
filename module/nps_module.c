@@ -101,7 +101,6 @@ static void position_callback(GVariant *param, void *user_data)
 
 	vel = location_velocity_new(timestamp, speed, direction, climb);
 	acc = location_accuracy_new(LOCATION_ACCURACY_LEVEL_DETAILED, horizontal, vertical);
-	MOD_NPS_LOGD("time(%d)", pos->timestamp);
 	MOD_NPS_LOGD("method(%d)", method);
 
 	mod_nps->pos_cb(TRUE, pos, vel, acc, mod_nps->userdata);
