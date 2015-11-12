@@ -67,6 +67,7 @@
 #define BRCM4752_PATH	PLATFORM_PATH"/bcm4752"
 #define BRCM47520_PATH	PLATFORM_PATH"/bcm47520"
 #define BRCM47511_PATH	PLATFORM_PATH"/bcm47511"
+#define BRCM47522_PATH	PLATFORM_PATH"/bcm47522"
 #define CSR_PATH		PLATFORM_PATH"/gsd4t"
 #define QCOM8210_PATH	PLATFORM_PATH"/msm8210_gps"
 #define QCOM8x30_PATH	PLATFORM_PATH"/msm8x30_gps"
@@ -160,7 +161,7 @@ static void reload_plugin_module(gps_server_t *server)
 		module_name = server->gps_plugin.name;
 	}
 
-	LOG_GPS(DBG_LOW, "Loading plugin.name : %s", module_name);
+	LOG_GPS(DBG_LOW, "replay_enabled:%d, Loading plugin.name: %s", server->replay_enabled, module_name);
 
 	if (!get_plugin_module()->deinit(&ReasonCode)) {
 		LOG_GPS(DBG_ERR, "Fail to GPS plugin deinit");
@@ -220,7 +221,7 @@ static void _gps_server_set_gps_state(int gps_state)
 	}
 
 	if (ret == TRUE) {
-		LOG_GPS(DBG_LOW, "Succesee to set VCONFKEY_LOCATION_GPS_STATE");
+		LOG_GPS(DBG_LOW, "Succeed to set VCONFKEY_LOCATION_GPS_STATE");
 	} else {
 		LOG_GPS(DBG_ERR, "Fail to set VCONF_LOCATION_GPS_STATE");
 	}
@@ -1098,7 +1099,8 @@ void check_plugin_module(char *module_name)
 	if (get_replay_enabled() == TRUE) {
 		g_strlcpy(module_name, "replay", strlen("replay") + 1);
 		LOG_GPS(DBG_LOW, "REPLAY_ENABELD is TRUE");
-	} else if (access(BRCM4752_PATH, F_OK) == 0 || access(BRCM47520_PATH, F_OK) == 0) {
+	} else if (access(BRCM4752_PATH, F_OK) == 0 || access(BRCM47520_PATH, F_OK) == 0 ||
+				access(BRCM47522_PATH, F_OK) == 0) {
 		g_strlcpy(module_name, "brcm", strlen("brcm") + 1);
 	} else if (access(BRCM47511_PATH, F_OK) == 0) {
 		g_strlcpy(module_name, "brcm-legacy", strlen("brcm-legacy") + 1);

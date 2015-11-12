@@ -610,7 +610,7 @@ static void update_dynamic_interval_table_foreach_cb(gpointer key, gpointer valu
 	lbs_server_s *lbs_server = updator_ud->lbs_server;
 	int method = updator_ud->method;
 
-	LOG_GPS(DBG_LOW, "foreach dynamic-interval. method:[%d], key:[%s]-interval:[%u], current optimized interval [%u]", method, (char *)key, interval_array[method], lbs_server->optimized_interval_array[method]);
+	LOG_GPS(DBG_LOW, "method:[%d], key:[%s] interval:[%u], current optimized interval [%u]", method, (char *)key, interval_array[method], lbs_server->optimized_interval_array[method]);
 	if ((lbs_server->temp_minimum_interval > interval_array[method])) {
 		lbs_server->temp_minimum_interval = interval_array[method];
 	}
@@ -954,8 +954,9 @@ static void set_options(GVariant *options, const gchar *client, gpointer userdat
 
 			if (!g_strcmp0(key, "INTERVAL_UPDATE")) {
 				interval = g_variant_get_uint32(value);
-				LOG_GPS(DBG_LOW, "INTERVAL_UPDATE [%u]", interval);
-				is_update_interval = TRUE;
+				LOG_GPS(DBG_LOW, "INTERVAL_UPDATE [%u] <-- [%u] ", interval, lbs_server->temp_minimum_interval);
+				if (interval != lbs_server->temp_minimum_interval)
+					is_update_interval = TRUE;
 			}
 		}
 

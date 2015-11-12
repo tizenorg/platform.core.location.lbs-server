@@ -1,3 +1,18 @@
+[Version]	lbs-server_0.6.10
+[Date]		12 November 2015
+[Problem]	lbs-server has smack issue because brcm plugin(libbrcm.so) doesn't write data into /run/systemd/journal/dev-log.
+[Solution]	[Workaround] lbs-server will be run by root util smack issue is resolved.
+[Changes]	1. Tizen 2.4 Sync
+		2. Keep the VCONFKEY_LOCATION_REPLAY_ENABLED after loading replay plugin because real GPS plugin can be installed after booting.
+[Developer]	Young-Ae Kang <youngae.kang@samsung.com>
+================================================================================
+
+[Version]	lbs-server_0.6.9
+[Date]		16 Jun 2015
+[Title]		Cynara was applied.
+[Developer]	Young-Ae Kang <youngae.kang@samsung.com>
+================================================================================
+
 [Version]	lbs-server_0.6.8
 [Date]		16 Jun 2015
 [Title]		Cynara was applied.
