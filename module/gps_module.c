@@ -148,7 +148,6 @@ static void satellite_callback(GVariant *param, void *user_data)
 
 static void position_callback(GVariant *param, void *user_data)
 {
-	MOD_LOGD("position_callback");
 	GpsManagerData *gps_manager = (GpsManagerData *)user_data;
 	g_return_if_fail(gps_manager);
 	g_return_if_fail(gps_manager->pos_cb);
@@ -159,6 +158,7 @@ static void position_callback(GVariant *param, void *user_data)
 
 	g_variant_get(param, "(iiidddddd@(idd))", &method, &fields, &timestamp, &latitude, &longitude, &altitude, &speed, &direction, &climb, &accuracy);
 
+	MOD_LOGD("method: %d", method);
 	if (method != LBS_CLIENT_METHOD_GPS)
 		return;
 
@@ -235,8 +235,7 @@ static int start_batch(gpointer handle, LocModBatchExtCB batch_cb, guint batch_i
 		MOD_LOGE("Fail to create lbs_client_h. Error[%d]", ret);
 		return LOCATION_ERROR_NOT_AVAILABLE;
 	}
-	MOD_LOGD("gps-manger(%x)", gps_manager);
-	MOD_LOGD("batch (%x), user_data(%x)", gps_manager->batch_cb, gps_manager->userdata);
+	MOD_LOGD("gps-manger(%p) batch_cb(%p) user_data(%p)", gps_manager, gps_manager->batch_cb, gps_manager->userdata);
 
 	ret = lbs_client_start_batch(gps_manager->lbs_client, LBS_CLIENT_BATCH_CB, on_signal_batch_callback, batch_interval, batch_period, gps_manager);
 	if (ret != LBS_CLIENT_ERROR_NONE) {
@@ -273,10 +272,10 @@ static int start(gpointer handle, guint pos_update_interval, LocModStatusCB stat
 		MOD_LOGE("Fail to create lbs_client_h. Error[%d]", ret);
 		return LOCATION_ERROR_NOT_AVAILABLE;
 	}
-	MOD_LOGD("gps-manger(%p)", gps_manager);
-	MOD_LOGD("pos_cb (%p), user_data(%p)", gps_manager->pos_cb, gps_manager->userdata);
+	MOD_LOGD("gps-manger(%p) pos_cb (%p) user_data(%p)", gps_manager, gps_manager->pos_cb, gps_manager->userdata);
 
-	ret = lbs_client_start(gps_manager->lbs_client, pos_update_interval, LBS_CLIENT_LOCATION_CB | LBS_CLIENT_LOCATION_STATUS_CB | LBS_CLIENT_SATELLITE_CB | LBS_CLIENT_NMEA_CB, on_signal_callback, gps_manager);
+	ret = lbs_client_start(gps_manager->lbs_client, pos_update_interval, 
+		LBS_CLIENT_LOCATION_CB | LBS_CLIENT_LOCATION_STATUS_CB | LBS_CLIENT_SATELLITE_CB | LBS_CLIENT_NMEA_CB, on_signal_callback, gps_manager);
 	if (ret != LBS_CLIENT_ERROR_NONE) {
 		if (ret == LBS_CLIENT_ERROR_ACCESS_DENIED) {
 			MOD_LOGE("Access denied[%d]", ret);
