@@ -22,23 +22,27 @@
 #ifndef __MOD_LOG_H__
 #define __MOD_LOG_H__
 
-#define TAG_LOCATION		"LOCATION_GPS"
-
 #include <dlog.h>
-#define MOD_LOGD(fmt,args...)	SLOG(LOG_DEBUG,	TAG_LOCATION, fmt, ##args)
-#define MOD_LOGW(fmt,args...)	SLOG(LOG_WARN,	TAG_LOCATION, fmt, ##args)
-#define MOD_LOGI(fmt,args...)	SLOG(LOG_INFO,	TAG_LOCATION, fmt, ##args)
-#define MOD_LOGE(fmt,args...)	SLOG(LOG_ERROR,	TAG_LOCATION, fmt, ##args)
-#define MOD_SECLOG(fmt,args...)	SECURE_SLOG(LOG_DEBUG, TAG_LOCATION, fmt, ##args)
+
+#define TAG_LOCATION		"LOCATION_GPS"
+#define MOD_LOGD(fmt,args...)	LOG(LOG_DEBUG,	TAG_LOCATION, fmt, ##args)
+#define MOD_LOGW(fmt,args...)	LOG(LOG_WARN,	TAG_LOCATION, fmt, ##args)
+#define MOD_LOGI(fmt,args...)	LOG(LOG_INFO,	TAG_LOCATION, fmt, ##args)
+#define MOD_LOGE(fmt,args...)	LOG(LOG_ERROR,	TAG_LOCATION, fmt, ##args)
+#define MOD_SECLOG(fmt,args...)	SECURE_LOG(LOG_DEBUG, TAG_LOCATION, fmt, ##args)
 
 #define TAG_MOD_NPS		"LOCATION_NPS"
+#define MOD_NPS_LOGD(fmt,args...)	LOG(LOG_DEBUG,	TAG_MOD_NPS, fmt, ##args)
+#define MOD_NPS_LOGW(fmt,args...)	LOG(LOG_WARN,	TAG_MOD_NPS, fmt, ##args)
+#define MOD_NPS_LOGI(fmt,args...)	LOG(LOG_INFO,	TAG_MOD_NPS, fmt, ##args)
+#define MOD_NPS_LOGE(fmt,args...)	LOG(LOG_ERROR,	TAG_MOD_NPS, fmt, ##args)
+#define MOD_NPS_SECLOG(fmt,args...)	SECURE_LOG(LOG_DEBUG, TAG_MOD_NPS, fmt, ##args)
 
-#include <dlog.h>
-#define MOD_NPS_LOGD(fmt,args...)	SLOG(LOG_DEBUG,	TAG_MOD_NPS, fmt, ##args)
-#define MOD_NPS_LOGW(fmt,args...)	SLOG(LOG_WARN,	TAG_MOD_NPS, fmt, ##args)
-#define MOD_NPS_LOGI(fmt,args...)	SLOG(LOG_INFO,	TAG_MOD_NPS, fmt, ##args)
-#define MOD_NPS_LOGE(fmt,args...)	SLOG(LOG_ERROR,	TAG_MOD_NPS, fmt, ##args)
-#define MOD_NPS_SECLOG(fmt,args...)	SECURE_SLOG(LOG_DEBUG, TAG_MOD_NPS, fmt, ##args)
-
+#define TAG_MOD_MOCK	"LOCATION_MOCK"
+#define MOD_MOCK_LOGD(fmt,args...)	LOG(LOG_DEBUG,	TAG_MOD_MOCK, fmt, ##args)
+#define MOD_MOCK_LOGW(fmt,args...)	LOG(LOG_WARN,	TAG_MOD_MOCK, fmt, ##args)
+#define MOD_MOCK_LOGI(fmt,args...)	LOG(LOG_INFO,	TAG_MOD_MOCK, fmt, ##args)
+#define MOD_MOCK_LOGE(fmt,args...)	LOG(LOG_ERROR,	TAG_MOD_MOCK, fmt, ##args)
+#define MOD_MOCK_SECLOG(fmt,args...)	SECURE_LOG(LOG_DEBUG, TAG_MOD_MOCK, fmt, ##args)
 
 #endif

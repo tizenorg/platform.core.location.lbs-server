@@ -1,6 +1,6 @@
 Name:    lbs-server
 Summary: LBS Server for Tizen
-Version: 0.6.8
+Version: 0.7.0
 Release: 1
 Group:   Location/Service
 License: Apache-2.0
@@ -104,6 +104,9 @@ rm -rf %{buildroot}
 	buxton2ctl -i -d set-int32 system db/location/replay/ReplayMode 0
 %endif
 
+#for testing
+	buxton2ctl -i -d set-int32 system db/location/replay/MockEnabled 0
+
 %post -n location-lbs-server
 #%ifnarch %arm
 #	cp -f /usr/lib/location/module/libgps.so /usr/lib/location/module/libwps0.so
@@ -128,6 +131,7 @@ rm -rf %{buildroot}
 %files -n location-lbs-server
 %manifest location-lbs-server.manifest
 %{_libdir}/location/module/libgps.so*
+%{_libdir}/location/module/libmock.so*
 
 %if 0%{?model_build_feature_location_position_wps}
 %{_libdir}/location/module/libwps.so*
