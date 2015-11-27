@@ -125,7 +125,7 @@ static void on_signal_callback(const gchar *sig, GVariant *param, gpointer user_
 
 }
 
-static int start(gpointer handle, LocModStatusCB status_cb, LocModPositionExtCB pos_cb, LocModSatelliteCB sat_cb, gpointer userdata)
+static int start(gpointer handle, LocModStatusCB status_cb, LocModPositionExtCB pos_cb, gpointer userdata)
 {
 	MOD_NPS_LOGD("start");
 	ModNpsData *mod_nps = (ModNpsData *) handle;
