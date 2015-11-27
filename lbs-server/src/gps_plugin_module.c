@@ -77,7 +77,7 @@ int load_plugin_module(char *specific_name, void **plugin_handle)
 		dlclose(*plugin_handle);
 		return FALSE;
 	}
-	LOG_GPS(DBG_LOW, "Success to load plugin module");
+	LOG_GPS(DBG_LOW, "Success to load plugin module (%s)", plugin_path);
 
 	return TRUE;
 }
