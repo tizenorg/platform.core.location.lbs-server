@@ -148,7 +148,6 @@ static void satellite_callback(GVariant *param, void *user_data)
 
 static void position_callback(GVariant *param, void *user_data)
 {
-	MOD_LOGD("position_callback");
 	GpsManagerData *gps_manager = (GpsManagerData *)user_data;
 	g_return_if_fail(gps_manager);
 	g_return_if_fail(gps_manager->pos_cb);
@@ -159,6 +158,7 @@ static void position_callback(GVariant *param, void *user_data)
 
 	g_variant_get(param, "(iiidddddd@(idd))", &method, &fields, &timestamp, &latitude, &longitude, &altitude, &speed, &direction, &climb, &accuracy);
 
+	MOD_LOGD("method: %d", method);
 	if (method != LBS_CLIENT_METHOD_GPS)
 		return;
 
