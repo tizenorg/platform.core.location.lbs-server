@@ -1,6 +1,6 @@
 Name:    lbs-server
 Summary: LBS Server for Tizen
-Version: 0.6.8
+Version: 1.0.0
 Release: 1
 Group:   Location/Service
 License: Apache-2.0
@@ -23,7 +23,6 @@ BuildRequires: pkgconfig(gio-2.0)
 BuildRequires: pkgconfig(vconf-internal-keys)
 BuildRequires: pkgconfig(gthread-2.0)
 BuildRequires: pkgconfig(gmodule-2.0)
-Requires: sys-assert
 
 %description
 LBS Server for Tizen
@@ -128,6 +127,7 @@ rm -rf %{buildroot}
 %files -n location-lbs-server
 %manifest location-lbs-server.manifest
 %{_libdir}/location/module/libgps.so*
+%{_libdir}/location/module/libmock.so*
 
 %if 0%{?model_build_feature_location_position_wps}
 %{_libdir}/location/module/libwps.so*

@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.0)
-PROJECT(lbs-server C CXX)
+PROJECT(lbs-server C)
 
 SET(SERVER_SRCS_DIR "src")
 SET(server_pkgs_LDFLAGS "${server_pkgs_LDFLAGS} -ldl")

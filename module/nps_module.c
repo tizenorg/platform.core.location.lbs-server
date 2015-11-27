@@ -72,8 +72,6 @@ static void status_callback(GVariant *param, void *user_data)
 
 static void position_callback(GVariant *param, void *user_data)
 {
-
-	MOD_NPS_LOGD("position_callback");
 	ModNpsData *mod_nps = (ModNpsData *)user_data;
 	g_return_if_fail(mod_nps);
 	g_return_if_fail(mod_nps->pos_cb);
@@ -84,6 +82,7 @@ static void position_callback(GVariant *param, void *user_data)
 
 	g_variant_get(param, "(iiidddddd@(idd))", &method, &fields, &timestamp, &latitude, &longitude, &altitude, &speed, &direction, &climb, &accuracy);
 
+	MOD_NPS_LOGD("method: %d", method);
 	if (method != LBS_CLIENT_METHOD_NPS)
 		return;
 
@@ -114,10 +113,8 @@ static void position_callback(GVariant *param, void *user_data)
 static void on_signal_callback(const gchar *sig, GVariant *param, gpointer user_data)
 {
 	if (!g_strcmp0(sig, "PositionChanged")) {
-		MOD_NPS_LOGD("PositionChanged");
 		position_callback(param, user_data);
 	} else if (!g_strcmp0(sig, "StatusChanged")) {
-		MOD_NPS_LOGD("StatusChanged");
 		status_callback(param, user_data);
 	} else {
 		MOD_NPS_LOGD("Invaild signal[%s]", sig);
@@ -125,7 +122,7 @@ static void on_signal_callback(const gchar *sig, GVariant *param, gpointer user_
 
 }
 
-static int start(gpointer handle, LocModStatusCB status_cb, LocModPositionExtCB pos_cb, LocModSatelliteCB sat_cb, gpointer userdata)
+static int start(gpointer handle, LocModStatusCB status_cb, LocModPositionExtCB pos_cb, gpointer userdata)
 {
 	MOD_NPS_LOGD("start");
 	ModNpsData *mod_nps = (ModNpsData *) handle;
@@ -144,7 +141,8 @@ static int start(gpointer handle, LocModStatusCB status_cb, LocModPositionExtCB 
 		return LOCATION_ERROR_NOT_AVAILABLE;
 	}
 
-	ret = lbs_client_start(mod_nps->lbs_client, 1, LBS_CLIENT_LOCATION_CB | LBS_CLIENT_LOCATION_STATUS_CB, on_signal_callback, mod_nps);
+	ret = lbs_client_start(mod_nps->lbs_client, 1, 
+		LBS_CLIENT_LOCATION_CB | LBS_CLIENT_LOCATION_STATUS_CB, on_signal_callback, mod_nps);
 	if (ret != LBS_CLIENT_ERROR_NONE) {
 		if (ret == LBS_CLIENT_ERROR_ACCESS_DENIED) {
 			MOD_NPS_LOGE("Access denied[%d]", ret);

@@ -32,6 +32,7 @@ extern "C" {
 #include <dlog.h>
 #define TAG_GPS_MANAGER		"LBS_SERVER_GPS"
 #define TAG_NPS_MANAGER		"LBS_SERVER_NPS"
+#define TAG_MOCK_MANAGER	"LBS_SERVER_MOCK"
 
 #define DBG_LOW		LOG_DEBUG
 #define DBG_INFO	LOG_INFO
@@ -40,6 +41,9 @@ extern "C" {
 
 #define LOG_GPS(dbg_lvl,fmt,args...)  SLOG(dbg_lvl, TAG_GPS_MANAGER, fmt, ##args)
 #define LOG_NPS(dbg_lvl,fmt,args...)  SLOG(dbg_lvl, TAG_NPS_MANAGER, fmt,##args)
+#define LOG_MOCK(dbg_lvl,fmt,args...)  SLOG(dbg_lvl, TAG_MOCK_MANAGER, fmt,##args)
+#define LOG_SEC(fmt,args...)	SECURE_SLOG(LOG_DEBUG, TAG_MOCK_MANAGER, fmt, ##args)
+
 #define FUNC_ENTRANCE_SERVER		LOG_GPS(DBG_LOW, "[%s] Entered!!", __func__);
 
 #ifdef __cplusplus
