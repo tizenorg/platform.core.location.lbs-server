@@ -97,22 +97,37 @@ void gps_get_last_position(pos_data_t *last_pos)
 	snprintf(location, sizeof(location), "%s", str);
 	free(str);
 
+	index = 0;
 	last_location[index] = (char *)strtok_r(location, ";", &last);
-	while (last_location[index++] != NULL) {
-		if (index == MAX_GPS_LOC_ITEM)
-			break;
+	while (last_location[index] != NULL) {
+		switch (index) {
+			case 0:
+				last_pos->latitude = strtod(last_location[index], NULL);
+				break;
+			case 1:
+				last_pos->longitude = strtod(last_location[index], NULL);
+				break;
+			case 2:
+				last_pos->altitude = strtod(last_location[index], NULL);
+				break;
+			case 3:
+				last_pos->speed = strtod(last_location[index], NULL);
+				break;
+			case 4:
+				last_pos->bearing = strtod(last_location[index], NULL);
+				break;
+			case 5:
+				last_pos->hor_accuracy = strtod(last_location[index], NULL);
+				break;
+			case 6:
+				last_pos->ver_accuracy = strtod(last_location[index], NULL);
+				break;
+			default:
+				break;
+		}
+		if (++index == MAX_GPS_LOC_ITEM) break;
 		last_location[index] = (char *)strtok_r(NULL, ";", &last);
 	}
-	index = 0;
-
-	last_pos->timestamp = timestamp;
-	last_pos->latitude = strtod(last_location[index++], NULL);
-	last_pos->longitude = strtod(last_location[index++], NULL);
-	last_pos->altitude = strtod(last_location[index++], NULL);
-	last_pos->speed = strtod(last_location[index++], NULL);
-	last_pos->bearing = strtod(last_location[index++], NULL);
-	last_pos->hor_accuracy = strtod(last_location[index++], NULL);
-	last_pos->ver_accuracy = strtod(last_location[index], NULL);
 
 	LOG_GPS(DBG_LOW, "get_last_position[%d]", last_pos->timestamp);
 }

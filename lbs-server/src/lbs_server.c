@@ -1207,21 +1207,34 @@ static void nps_get_last_position(lbs_server_s *lbs_server_nps)
 	free(str);
 
 	last_location[index] = (char *)strtok_r(location, ";", &last);
-	while (last_location[index++] != NULL) {
-		if (index == MAX_NPS_LOC_ITEM)
-			break;
+	lbs_server_nps->last_pos.timestamp = timestamp;
+
+	while (last_location[index] != NULL) {
+		switch (index) {
+			case 0:
+				lbs_server_nps->last_pos.latitude = strtod(last_location[index], NULL);
+				break;
+			case 1:
+				lbs_server_nps->last_pos.longitude = strtod(last_location[index], NULL);
+				break;
+			case 2:
+				lbs_server_nps->last_pos.altitude = strtod(last_location[index], NULL);
+				break;
+			case 3:
+				lbs_server_nps->last_pos.speed = strtod(last_location[index], NULL);
+				break;
+			case 4:
+				lbs_server_nps->last_pos.direction = strtod(last_location[index], NULL);
+				break;
+			case 5:
+				lbs_server_nps->last_pos.hor_accuracy = strtod(last_location[index], NULL);
+				break;
+			default:
+				break;
+		}
+		if (++index == MAX_NPS_LOC_ITEM) break;
 		last_location[index] = (char *)strtok_r(NULL, ";", &last);
 	}
-	index = 0;
-
-	lbs_server_nps->last_pos.timestamp = timestamp;
-	lbs_server_nps->last_pos.latitude = strtod(last_location[index++], NULL);
-	lbs_server_nps->last_pos.longitude = strtod(last_location[index++], NULL);
-	lbs_server_nps->last_pos.altitude = strtod(last_location[index++], NULL);
-	lbs_server_nps->last_pos.speed = strtod(last_location[index++], NULL);
-	lbs_server_nps->last_pos.direction = strtod(last_location[index++], NULL);
-	lbs_server_nps->last_pos.hor_accuracy = strtod(last_location[index], NULL);
-
 	LOG_NPS(DBG_LOW, "get nps_last_position timestamp : %d", lbs_server_nps->last_pos.timestamp);
 }
 

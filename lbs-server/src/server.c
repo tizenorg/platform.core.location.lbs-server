@@ -1182,6 +1182,8 @@ static gps_server_t *_initialize_gps_data(void)
 
 static void _deinitialize_gps_data(void)
 {
+	if (g_gps_server == NULL) return;
+
 	if (g_gps_server->pos_data != NULL) {
 		free(g_gps_server->pos_data);
 		g_gps_server->pos_data = NULL;
@@ -1206,10 +1208,8 @@ static void _deinitialize_gps_data(void)
 		g_gps_server->nmea_data = NULL;
 	}
 
-	if (g_gps_server != NULL) {
-		free(g_gps_server);
-		g_gps_server = NULL;
-	}
+	free(g_gps_server);
+	g_gps_server = NULL;
 }
 
 int initialize_server(int argc, char **argv)
