@@ -23,7 +23,6 @@ BuildRequires: pkgconfig(gio-2.0)
 BuildRequires: pkgconfig(vconf-internal-keys)
 BuildRequires: pkgconfig(gthread-2.0)
 BuildRequires: pkgconfig(gmodule-2.0)
-Requires: sys-assert
 
 %description
 LBS Server for Tizen
