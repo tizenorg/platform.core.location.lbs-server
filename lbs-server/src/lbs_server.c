@@ -1536,6 +1536,7 @@ static void set_mock_location_cb(gint method, gdouble latitude, gdouble longitud
 
 	time_t timestamp;
 	time(&timestamp);
+	g_mock_position.fields |= LBS_POSITION_EXT_FIELDS_DIRTY;
 	g_mock_position.timestamp = timestamp;
 	g_mock_position.latitude = latitude;
 	g_mock_position.longitude = longitude;
@@ -1558,6 +1559,7 @@ int __copy_mock_location(lbs_server_s *lbs_server)
 
 	memset(&lbs_server->mock_position, 0x00, sizeof(NpsManagerPositionExt));
 	memcpy(&lbs_server->mock_position, &g_mock_position, sizeof(NpsManagerPositionExt));
+	g_mock_position.fields = LBS_POSITION_EXT_FIELDS_NONE;
 	LOG_SEC("[%ld] lat = %lf, lng = %lf", lbs_server->mock_position.timestamp, lbs_server->mock_position.latitude, lbs_server->mock_position.longitude);
 
 	if (lbs_server->mock_position.latitude >= -90 && lbs_server->mock_position.latitude <= 90 ) {
@@ -1599,9 +1601,15 @@ static gboolean __mock_position_update_cb(gpointer userdata)
 		}
 	} else if (lbs_server->mock_status == LBS_STATUS_AVAILABLE) {
 		if (g_mock_position.timestamp) {
+			if (g_mock_position.fields & LBS_POSITION_EXT_FIELDS_DIRTY){
+				__copy_mock_location(lbs_server);		
+			}
+			
 			time_t timestamp;
 			time(&timestamp);
-			LOG_MOCK(DBG_LOW, "previous time: %d", lbs_server->mock_position.timestamp);
+
+			LOG_SEC("[%d] lat = %lf, lng = %lf", lbs_server->mock_position.timestamp, 
+				lbs_server->mock_position.latitude, lbs_server->mock_position.longitude);
 
 			lbs_server->mock_position.timestamp = timestamp;
 			lbs_server_emit_position_changed(lbs_server->lbs_dbus_server, LBS_SERVER_METHOD_MOCK,
