@@ -33,20 +33,17 @@
 
 int fd = -1;
 
-struct tm *__get_current_time() {
+struct tm * __get_current_time(struct tm *cur_time) {
 	time_t now;
-	struct tm *cur_time;
-
 	time(&now);
-	cur_time = localtime(&now);
-	return cur_time;
+	return localtime_r(&now, cur_time);
 }
 
 void gps_init_log()
 {
 	LOG_GPS(DBG_ERR, "gps_init_log");
 	int ret = -1;
-	struct tm *cur_time = NULL;
+	struct tm cur_time;
 	char buf[256] = {0, };
 	fd = open(GPG_DUMP_LOG, O_RDWR | O_APPEND | O_CREAT, 0644);
 	if (fd < 0) {
@@ -54,13 +51,12 @@ void gps_init_log()
 		return;
 	}
 
-	cur_time = __get_current_time();
-	if (!cur_time) {
+	if (!__get_current_time(&cur_time)) {
 		LOG_GPS(DBG_ERR, "Can't get current time[%s]", GPG_DUMP_LOG);
 		return;
 	}
 
-	g_snprintf(buf, 256, "[%02d:%02d:%02d] -- START GPS -- \n", cur_time->tm_hour, cur_time->tm_min, cur_time->tm_sec);
+	g_snprintf(buf, 256, "[%02d:%02d:%02d] -- START GPS -- \n", cur_time.tm_hour, cur_time.tm_min, cur_time.tm_sec);
 	ret = write(fd, buf, strlen(buf));
 	if (ret == -1) {
 		LOG_GPS(DBG_ERR, "Fail to write file[%s]", GPG_DUMP_LOG);
@@ -72,13 +68,13 @@ void gps_deinit_log()
 	LOG_GPS(DBG_ERR, "gps_deinit_log");
 	if (fd < 0) return;
 	int ret = -1;
-	struct tm *cur_time = __get_current_time();
+	struct tm cur_time;
 	char buf[256] = {0, };
 
-	if (!cur_time) {
+	if (!__get_current_time(&cur_time)) {
 		LOG_GPS(DBG_ERR, "Can't get current time[%s]", GPG_DUMP_LOG);
 	} else {
-		g_snprintf(buf, 256, "[%02d:%02d:%02d] -- END GPS -- \n", cur_time->tm_hour, cur_time->tm_min, cur_time->tm_sec);
+		g_snprintf(buf, 256, "[%02d:%02d:%02d] -- END GPS -- \n", cur_time.tm_hour, cur_time.tm_min, cur_time.tm_sec);
 		ret = write(fd, buf, strlen(buf));
 		if (ret == -1) {
 			LOG_GPS(DBG_ERR, "Fail to write file[%s]", GPG_DUMP_LOG);
@@ -96,17 +92,17 @@ void gps_dump_log(const char *str, const char *app_id)
 	}
 	int ret = -1;
 	char buf[256] = {0, };
-	struct tm *cur_time = __get_current_time();
+	struct tm cur_time;
 
-	if (!cur_time) {
+	if (!__get_current_time(&cur_time)) {
 		LOG_GPS(DBG_ERR, "Can't get current time[%s]", GPG_DUMP_LOG);
 		return;
 	}
 
 	if (app_id == NULL) {
-		g_snprintf(buf, 256, "[%02d:%02d:%02d] %s\n", cur_time->tm_hour, cur_time->tm_min, cur_time->tm_sec, str);
+		g_snprintf(buf, 256, "[%02d:%02d:%02d] %s\n", cur_time.tm_hour, cur_time.tm_min, cur_time.tm_sec, str);
 	} else {
-		g_snprintf(buf, 256, "[%02d:%02d:%02d] %s from [%s]\n", cur_time->tm_hour, cur_time->tm_min, cur_time->tm_sec, str, app_id);
+		g_snprintf(buf, 256, "[%02d:%02d:%02d] %s from [%s]\n", cur_time.tm_hour, cur_time.tm_min, cur_time.tm_sec, str, app_id);
 	}
 	LOG_GPS(DBG_ERR, "Add dump log [%s", buf);
 	ret = write(fd, buf, strlen(buf));
