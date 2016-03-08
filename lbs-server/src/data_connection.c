@@ -279,7 +279,6 @@ unsigned int query_dns(char *pdns_lookup_addr, unsigned int *ipaddr, int *port)
 	FUNC_ENTRANCE_SERVER;
 	/*int dns_id; */
 	unsigned int ret = 0;
-	struct hostent *he;
 
 	char *colon = strchr(pdns_lookup_addr, ':');
 	char *last = NULL;
@@ -291,9 +290,27 @@ unsigned int query_dns(char *pdns_lookup_addr, unsigned int *ipaddr, int *port)
 		*port = atoi(ptr);
 	}
 
-	he = gethostbyname(pdns_lookup_addr);
 
-	if (he != NULL) {
+	struct hostent hostbuf, *hp = NULL;
+	size_t hstbuflen;
+	char *tmphstbuf = NULL;
+	int res;
+	int herr;
+
+	hstbuflen = 1024;
+	tmphstbuf = malloc (hstbuflen);
+	if (!tmphstbuf) return FALSE;
+
+	while ((res = gethostbyname_r(pdns_lookup_addr, &hostbuf, tmphstbuf, hstbuflen, &hp, &herr)) == ERANGE)
+	{
+		/* Enlarge the buffer.  */
+		hstbuflen *= 2;
+		tmphstbuf = realloc (tmphstbuf, hstbuflen);
+		if (!tmphstbuf) return FALSE;
+	}
+	free (tmphstbuf);
+
+	if (res == 0 && hp) {
 		LOG_GPS(DBG_LOW, "g_agps_ipaddr: %u\n", g_ipaddr);
 		*ipaddr = g_ipaddr;
 
