@@ -277,9 +277,15 @@ unsigned int stop_pdp_connection(void)
 unsigned int query_dns(char *pdns_lookup_addr, unsigned int *ipaddr, int *port)
 {
 	FUNC_ENTRANCE_SERVER;
+
+	if (!pdns_lookup_addr || !ipaddr || !port) return FALSE;
+
 	/*int dns_id; */
 	unsigned int ret = 0;
-	struct hostent *he;
+	struct hostent hostbuf, *he = NULL;
+	int tmplen = 1024;
+	char *tmpbuf = NULL;
+	int res, herr;
 
 	char *colon = strchr(pdns_lookup_addr, ':');
 	char *last = NULL;
@@ -291,7 +297,24 @@ unsigned int query_dns(char *pdns_lookup_addr, unsigned int *ipaddr, int *port)
 		*port = atoi(ptr);
 	}
 
-	he = gethostbyname(pdns_lookup_addr);
+	tmpbuf = malloc(tmplen);
+	if (!tmpbuf) return FALSE;
+
+	while ((res = gethostbyname_r(pdns_lookup_addr, &hostbuf, tmpbuf, tmplen, &he, &herr)) == ERANGE)
+	{
+		/* Enlarge the buffer.  */
+		tmplen *= 2;
+		void *tmp = realloc(tmpbuf, tmplen);
+		if (!tmp) {
+			free(tmpbuf);
+			LOG_GPS(DBG_ERR, "Failed to reallocate memories.");
+			return FALSE;
+		}
+		else {
+			tmpbuf = tmp;
+		}
+	}
+	free(tmpbuf);
 
 	if (he != NULL) {
 		LOG_GPS(DBG_LOW, "g_agps_ipaddr: %u\n", g_ipaddr);
