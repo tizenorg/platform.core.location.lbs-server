@@ -109,9 +109,9 @@ int nps_unload_plugin_module(void *plugin_handle)
 
 	dlclose(plugin_handle);
 
-	if (g_plugin) {
+	if (g_plugin)
 		g_plugin = NULL;
-	}
+
 	return TRUE;
 }
 

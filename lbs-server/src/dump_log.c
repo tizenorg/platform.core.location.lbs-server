@@ -33,7 +33,8 @@
 
 int fd = -1;
 
-struct tm * __get_current_time(struct tm *cur_time) {
+struct tm * __get_current_time(struct tm *cur_time)
+{
 	time_t now;
 	time(&now);
 	return localtime_r(&now, cur_time);
@@ -58,9 +59,9 @@ void gps_init_log()
 
 	g_snprintf(buf, 256, "[%02d:%02d:%02d] -- START GPS -- \n", cur_time.tm_hour, cur_time.tm_min, cur_time.tm_sec);
 	ret = write(fd, buf, strlen(buf));
-	if (ret == -1) {
+
+	if (ret == -1)
 		LOG_GPS(DBG_ERR, "Fail to write file[%s]", GPG_DUMP_LOG);
-	}
 }
 
 void gps_deinit_log()
@@ -76,9 +77,9 @@ void gps_deinit_log()
 	} else {
 		g_snprintf(buf, 256, "[%02d:%02d:%02d] -- END GPS -- \n", cur_time.tm_hour, cur_time.tm_min, cur_time.tm_sec);
 		ret = write(fd, buf, strlen(buf));
-		if (ret == -1) {
+
+		if (ret == -1)
 			LOG_GPS(DBG_ERR, "Fail to write file[%s]", GPG_DUMP_LOG);
-		}
 	}
 	close(fd);
 	fd = -1;
@@ -99,14 +100,13 @@ void gps_dump_log(const char *str, const char *app_id)
 		return;
 	}
 
-	if (app_id == NULL) {
+	if (app_id == NULL)
 		g_snprintf(buf, 256, "[%02d:%02d:%02d] %s\n", cur_time.tm_hour, cur_time.tm_min, cur_time.tm_sec, str);
-	} else {
+	else
 		g_snprintf(buf, 256, "[%02d:%02d:%02d] %s from [%s]\n", cur_time.tm_hour, cur_time.tm_min, cur_time.tm_sec, str, app_id);
-	}
+
 	LOG_GPS(DBG_ERR, "Add dump log [%s", buf);
 	ret = write(fd, buf, strlen(buf));
-	if (ret == -1) {
+	if (ret == -1)
 		LOG_GPS(DBG_ERR, "Fail to write file[%s]", GPG_DUMP_LOG);
-	}
 }

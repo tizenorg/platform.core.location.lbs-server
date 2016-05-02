@@ -207,15 +207,14 @@ static void on_signal_batch_callback(const gchar *sig, GVariant *param, gpointer
 
 static void on_signal_callback(const gchar *sig, GVariant *param, gpointer user_data)
 {
-	if (!g_strcmp0(sig, "SatelliteChanged")) {
+	if (!g_strcmp0(sig, "SatelliteChanged"))
 		satellite_callback(param, user_data);
-	} else if (!g_strcmp0(sig, "PositionChanged")) {
+	else if (!g_strcmp0(sig, "PositionChanged"))
 		position_callback(param, user_data);
-	} else if (!g_strcmp0(sig, "StatusChanged")) {
+	else if (!g_strcmp0(sig, "StatusChanged"))
 		status_callback(param, user_data);
-	} else {
+	else
 		MOD_LOGD("Invaild signal[%s]", sig);
-	}
 }
 
 static int start_batch(gpointer handle, LocModBatchExtCB batch_cb, guint batch_interval, guint batch_period, gpointer userdata)
@@ -274,8 +273,7 @@ static int start(gpointer handle, guint pos_update_interval, LocModStatusCB stat
 	}
 	MOD_LOGD("gps-manger(%p) pos_cb (%p) user_data(%p)", gps_manager, gps_manager->pos_cb, gps_manager->userdata);
 
-	ret = lbs_client_start(gps_manager->lbs_client, pos_update_interval, 
-		LBS_CLIENT_LOCATION_CB | LBS_CLIENT_LOCATION_STATUS_CB | LBS_CLIENT_SATELLITE_CB | LBS_CLIENT_NMEA_CB, on_signal_callback, gps_manager);
+	ret = lbs_client_start(gps_manager->lbs_client, pos_update_interval, LBS_CLIENT_LOCATION_CB | LBS_CLIENT_LOCATION_STATUS_CB | LBS_CLIENT_SATELLITE_CB | LBS_CLIENT_NMEA_CB, on_signal_callback, gps_manager);
 	if (ret != LBS_CLIENT_ERROR_NONE) {
 		if (ret == LBS_CLIENT_ERROR_ACCESS_DENIED) {
 			MOD_LOGE("Access denied[%d]", ret);
@@ -343,9 +341,8 @@ static int stop(gpointer handle)
 	}
 	gps_manager->lbs_client = NULL;
 
-	if (gps_manager->status_cb) {
+	if (gps_manager->status_cb)
 		gps_manager->status_cb(FALSE, LOCATION_STATUS_NO_FIX, gps_manager->userdata);
-	}
 
 	gps_manager->status_cb = NULL;
 	gps_manager->pos_cb = NULL;
@@ -414,10 +411,12 @@ static int get_last_position(gpointer handle, LocationPosition **position, Locat
 			}
 		} else {
 			if (vconf_get_int(VCONFKEY_LOCATION_NV_LAST_GPS_TIMESTAMP, &timestamp)) {
+				MOD_LOGD("Error to get VCONFKEY_LOCATION_NV_LAST_GPS_TIMESTAMP");
 				return LOCATION_ERROR_NOT_AVAILABLE;
 			}
 			str = vconf_get_str(VCONFKEY_LOCATION_NV_LAST_GPS_LOCATION);
 			if (str == NULL) {
+				MOD_LOGD("Error to get VCONFKEY_LOCATION_NV_LAST_GPS_LOCATION");
 				return LOCATION_ERROR_NOT_AVAILABLE;
 			}
 			snprintf(location, sizeof(location), "%s", str);
@@ -427,28 +426,28 @@ static int get_last_position(gpointer handle, LocationPosition **position, Locat
 			last_location[index] = (char *)strtok_r(location, ";", &last);
 			while (last_location[index] != NULL) {
 				switch (index) {
-					case 0:
+				case 0:
 						latitude = strtod(last_location[index], NULL);
 						break;
-					case 1:
+				case 1:
 						longitude = strtod(last_location[index], NULL);
 						break;
-					case 2:
+				case 2:
 						altitude = strtod(last_location[index], NULL);
 						break;
-					case 3:
+				case 3:
 						speed = strtod(last_location[index], NULL);
 						break;
-					case 4:
+				case 4:
 						direction = strtod(last_location[index], NULL);
 						break;
-					case 5:
+				case 5:
 						hor_accuracy = strtod(last_location[index], NULL);
 						break;
-					case 6:
+				case 6:
 						ver_accuracy = strtod(last_location[index], NULL);
 						break;
-					default:
+				default:
 						break;
 				}
 				if (++index == MAX_GPS_LOC_ITEM) break;
@@ -457,11 +456,10 @@ static int get_last_position(gpointer handle, LocationPosition **position, Locat
 		}
 	}
 
-	if (timestamp) {
+	if (timestamp)
 		status = LOCATION_STATUS_3D_FIX;
-	} else {
+	else
 		return LOCATION_ERROR_NOT_AVAILABLE;
-	}
 
 	level = LOCATION_ACCURACY_LEVEL_DETAILED;
 	*position = location_position_new(timestamp, latitude, longitude, altitude, status);
@@ -523,7 +521,7 @@ LOCATION_MODULE_API gpointer init(LocModGpsOps *ops)
 	ops->set_position_update_interval = set_position_update_interval;
 
 	Dl_info info;
-	if (dladdr(&get_last_position, &info) == 0) {
+	if (dladdr(&get_last_position, &info) == 0)
 		MOD_LOGE("Failed to get module name");
 	} else if (g_strrstr(info.dli_fname, "gps")) {
 		ops->get_nmea = get_nmea;
