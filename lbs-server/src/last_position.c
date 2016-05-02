@@ -72,9 +72,8 @@ void gps_set_position(const pos_data_t *pos)
 
 	setting_get_int(VCONFKEY_LOCATION_NV_LAST_GPS_TIMESTAMP, &last_timestamp);
 
-	if ((timestamp - last_timestamp) > UPDATE_INTERVAL) {
+	if ((timestamp - last_timestamp) > UPDATE_INTERVAL)
 		gps_set_last_position(pos);
-	}
 }
 
 void gps_get_last_position(pos_data_t *last_pos)
@@ -92,6 +91,7 @@ void gps_get_last_position(pos_data_t *last_pos)
 	setting_get_int(VCONFKEY_LOCATION_LAST_GPS_TIMESTAMP, &timestamp);
 	str = setting_get_string(VCONFKEY_LOCATION_NV_LAST_GPS_LOCATION);
 	if (str == NULL) {
+		LOG_GPS(DBG_LOW, "last location is null");
 		return;
 	}
 	snprintf(location, sizeof(location), "%s", str);
@@ -101,28 +101,28 @@ void gps_get_last_position(pos_data_t *last_pos)
 	last_location[index] = (char *)strtok_r(location, ";", &last);
 	while (last_location[index] != NULL) {
 		switch (index) {
-			case 0:
+		case 0:
 				last_pos->latitude = strtod(last_location[index], NULL);
 				break;
-			case 1:
+		case 1:
 				last_pos->longitude = strtod(last_location[index], NULL);
 				break;
-			case 2:
+		case 2:
 				last_pos->altitude = strtod(last_location[index], NULL);
 				break;
-			case 3:
+		case 3:
 				last_pos->speed = strtod(last_location[index], NULL);
 				break;
-			case 4:
+		case 4:
 				last_pos->bearing = strtod(last_location[index], NULL);
 				break;
-			case 5:
+		case 5:
 				last_pos->hor_accuracy = strtod(last_location[index], NULL);
 				break;
-			case 6:
+		case 6:
 				last_pos->ver_accuracy = strtod(last_location[index], NULL);
 				break;
-			default:
+		default:
 				break;
 		}
 		if (++index == MAX_GPS_LOC_ITEM) break;

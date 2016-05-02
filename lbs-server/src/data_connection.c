@@ -97,7 +97,7 @@ static void pdp_proxy_conf()
 void pdp_evt_cb(net_event_info_t *event_cb, void *user_data)
 {
 	switch (event_cb->Event) {
-		case NET_EVENT_OPEN_RSP: {
+	case NET_EVENT_OPEN_RSP: {
 				LOG_GPS(DBG_LOW, "event_cb->Error : [%d]\n", event_cb->Error);
 				if (get_connection_status() != ACTIVATING) {
 					LOG_GPS(DBG_LOW, "Not Activating status\n");
@@ -122,7 +122,7 @@ void pdp_evt_cb(net_event_info_t *event_cb, void *user_data)
 			}
 			break;
 
-		case NET_EVENT_CLOSE_RSP:
+	case NET_EVENT_CLOSE_RSP:
 			if (get_connection_status() != ACTIVATED && get_connection_status() != DEACTIVATING) {
 				LOG_GPS(DBG_ERR, "Not Activated && Deactivating status\n");
 			} else if (event_cb->Error == NET_ERR_NONE || event_cb->Error == NET_ERR_UNKNOWN) {
@@ -135,7 +135,7 @@ void pdp_evt_cb(net_event_info_t *event_cb, void *user_data)
 			}
 			break;
 
-		case NET_EVENT_CLOSE_IND:
+	case NET_EVENT_CLOSE_IND:
 			if (get_connection_status() != ACTIVATED && get_connection_status() != DEACTIVATING) {
 				LOG_GPS(DBG_ERR, "Not Activated && Deactivating status\n");
 			} else if (event_cb->Error == NET_ERR_NONE || event_cb->Error == NET_ERR_UNKNOWN) {
@@ -147,9 +147,9 @@ void pdp_evt_cb(net_event_info_t *event_cb, void *user_data)
 				noti_resp_noti(pdp_pipe_fds, FALSE);
 			}
 			break;
-		case NET_EVENT_OPEN_IND:
+	case NET_EVENT_OPEN_IND:
 			break;
-		default:
+	default:
 			break;
 	}
 }
@@ -185,11 +185,11 @@ unsigned int start_pdp_connection(void)
 		LOG_GPS(DBG_WARN, "Error in net_open_connection_with_preference() [%d]\n", err);
 		set_connection_status(DEACTIVATED);
 		err = net_deregister_client();
-		if (err == NET_ERR_NONE) {
+		if (err == NET_ERR_NONE)
 			LOG_GPS(DBG_LOW, "Client deregistered successfully\n");
-		} else {
+		else
 			LOG_GPS(DBG_ERR, "Error deregistering the client\n");
-		}
+
 		noti_resp_deinit(pdp_pipe_fds);
 		return FALSE;
 	}
@@ -204,11 +204,11 @@ unsigned int start_pdp_connection(void)
 			noti_resp_deinit(pdp_pipe_fds);
 
 			err = net_deregister_client();
-			if (err == NET_ERR_NONE) {
+			if (err == NET_ERR_NONE)
 				LOG_GPS(DBG_LOW, "Client deregistered successfully\n");
-			} else {
+			else
 				LOG_GPS(DBG_ERR, "Error deregistering the client\n");
-			}
+
 			return FALSE;
 		}
 	} else {
@@ -216,11 +216,11 @@ unsigned int start_pdp_connection(void)
 		noti_resp_deinit(pdp_pipe_fds);
 
 		err = net_deregister_client();
-		if (err == NET_ERR_NONE) {
+		if (err == NET_ERR_NONE)
 			LOG_GPS(DBG_LOW, "Client deregistered successfully\n");
-		} else {
+		else
 			LOG_GPS(DBG_ERR, "Error deregistering the client\n");
-		}
+
 		return FALSE;
 	}
 }
@@ -252,11 +252,10 @@ unsigned int stop_pdp_connection(void)
 		return FALSE;
 	}
 	if (noti_resp_wait(pdp_pipe_fds) > 0) {
-		if (noti_resp_check(pdp_pipe_fds)) {
+		if (noti_resp_check(pdp_pipe_fds))
 			LOG_GPS(DBG_LOW, "Close Connection success\n");
-		} else {
+		else
 			LOG_GPS(DBG_ERR, "Close connection failed\n");
-		}
 	}
 
 	noti_resp_deinit(pdp_pipe_fds);
@@ -300,8 +299,7 @@ unsigned int query_dns(char *pdns_lookup_addr, unsigned int *ipaddr, int *port)
 	tmpbuf = malloc(tmplen);
 	if (!tmpbuf) return FALSE;
 
-	while ((res = gethostbyname_r(pdns_lookup_addr, &hostbuf, tmpbuf, tmplen, &he, &herr)) == ERANGE)
-	{
+	while ((res = gethostbyname_r(pdns_lookup_addr, &hostbuf, tmpbuf, tmplen, &he, &herr)) == ERANGE) {
 		/* Enlarge the buffer.  */
 		tmplen *= 2;
 		void *tmp = realloc(tmpbuf, tmplen);
@@ -309,8 +307,7 @@ unsigned int query_dns(char *pdns_lookup_addr, unsigned int *ipaddr, int *port)
 			free(tmpbuf);
 			LOG_GPS(DBG_ERR, "Failed to reallocate memories.");
 			return FALSE;
-		}
-		else {
+		} else {
 			tmpbuf = tmp;
 		}
 	}
@@ -332,11 +329,10 @@ unsigned int query_dns(char *pdns_lookup_addr, unsigned int *ipaddr, int *port)
 
 int noti_resp_init(int *noti_pipe_fds)
 {
-	if (pipe(noti_pipe_fds) < 0) {
+	if (pipe(noti_pipe_fds) < 0)
 		return 0;
-	} else {
+	else
 		return 1;
-	}
 }
 
 int noti_resp_wait(int *noti_pipe_fds)
@@ -359,9 +355,9 @@ int noti_resp_check(int *noti_pipe_fds)
 	int activation = 0;
 	ssize_t ret_val = 0;
 	ret_val = read(*noti_pipe_fds, &activation, sizeof(int));
-	if (ret_val == 0) {
+	if (ret_val == 0)
 		LOG_GPS(DBG_ERR, "No data");
-	}
+
 	return activation;
 }
 
@@ -369,14 +365,12 @@ int noti_resp_deinit(int *noti_pipe_fds)
 {
 	int err;
 	err = close(*noti_pipe_fds);
-	if (err != 0) {
+	if (err != 0)
 		LOG_GPS(DBG_ERR, "ERROR closing fds1.\n");
-	}
 
 	err = close(*(noti_pipe_fds + 1));
-	if (err != 0) {
+	if (err != 0)
 		LOG_GPS(DBG_ERR, "ERROR closing fds2.\n");
-	}
 
 	return err;
 }
