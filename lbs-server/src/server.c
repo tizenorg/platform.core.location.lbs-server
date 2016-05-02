@@ -57,7 +57,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
-#if !GLIB_CHECK_VERSION (2, 31, 0)
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 #include <glib/gthread.h>
 #endif
 
@@ -116,9 +116,8 @@ nps_plugin_handler_t g_nps_plugin;
 
 static void __nps_plugin_handler_deinit(void)
 {
-	if (g_nps_plugin.handle != NULL) {
+	if (g_nps_plugin.handle != NULL)
 		g_nps_plugin.handle = NULL;
-	}
 }
 
 static int _gps_server_gps_event_cb(gps_event_info_t *gps_event_info, void *user_data);
@@ -155,11 +154,10 @@ static void reload_plugin_module(gps_server_t *server)
 	char *module_name;
 	gps_failure_reason_t ReasonCode = GPS_FAILURE_CAUSE_NORMAL;
 
-	if (server->replay_enabled == TRUE) {
+	if (server->replay_enabled == TRUE)
 		module_name = REPLAY_MODULE;
-	} else {
+	else
 		module_name = server->gps_plugin.name;
-	}
 
 	LOG_GPS(DBG_LOW, "replay_enabled:%d, Loading plugin.name: %s", server->replay_enabled, module_name);
 
@@ -191,9 +189,8 @@ static int _gps_server_get_gps_state()
 {
 	int val;
 
-	if (setting_get_int(VCONFKEY_LOCATION_GPS_STATE, &val) == FALSE) {
+	if (setting_get_int(VCONFKEY_LOCATION_GPS_STATE, &val) == FALSE)
 		val = POSITION_OFF;
-	}
 
 	return val;
 }
@@ -203,28 +200,27 @@ static void _gps_server_set_gps_state(int gps_state)
 	int ret;
 
 	switch (gps_state) {
-		case POSITION_CONNECTED:
+	case POSITION_CONNECTED:
 			ret = setting_set_int(VCONFKEY_LOCATION_GPS_STATE, POSITION_CONNECTED);
 			gps_dump_log("GPS state : POSITION_CONNECTED", NULL);
 			break;
-		case POSITION_SEARCHING:
+	case POSITION_SEARCHING:
 			ret = setting_set_int(VCONFKEY_LOCATION_GPS_STATE, POSITION_SEARCHING);
 			gps_dump_log("GPS state : POSITION_SEARCHING", NULL);
 			break;
-		case POSITION_OFF:
+	case POSITION_OFF:
 			ret = setting_set_int(VCONFKEY_LOCATION_GPS_STATE, POSITION_OFF);
 			gps_dump_log("GPS state : POSITION_OFF", NULL);
 			break;
-		default:
+	default:
 			ret = setting_set_int(VCONFKEY_LOCATION_GPS_STATE, POSITION_OFF);
 			break;
 	}
 
-	if (ret == TRUE) {
+	if (ret == TRUE)
 		LOG_GPS(DBG_LOW, "Succeed to set VCONFKEY_LOCATION_GPS_STATE");
-	} else {
+	else
 		LOG_GPS(DBG_ERR, "Fail to set VCONF_LOCATION_GPS_STATE");
-	}
 }
 
 int request_change_pos_update_interval_standalone_gps(unsigned int interval)
@@ -478,9 +474,8 @@ static void _gps_plugin_handler_init(gps_server_t *server, char *module_name)
 
 static void _gps_plugin_handler_deinit(gps_server_t *server)
 {
-	if (server->gps_plugin.handle != NULL) {
+	if (server->gps_plugin.handle != NULL)
 		server->gps_plugin.handle = NULL;
-	}
 
 	if (server->gps_plugin.name != NULL) {
 		free(server->gps_plugin.name);
@@ -529,35 +524,31 @@ static void _gps_server_start_event(gps_server_t *server)
 
 	if (server->pos_data == NULL) {
 		server->pos_data = (pos_data_t *) malloc(sizeof(pos_data_t));
-		if (server->pos_data == NULL) {
+		if (server->pos_data == NULL)
 			LOG_GPS(DBG_WARN, "//callback: server->pos_data re-malloc Failed!!");
-		} else {
+		else
 			memset(server->pos_data, 0x00, sizeof(pos_data_t));
-		}
 	}
 	if (server->batch_data == NULL) {
 		server->batch_data = (batch_data_t *) malloc(sizeof(batch_data_t));
-		if (server->batch_data == NULL) {
+		if (server->batch_data == NULL)
 			LOG_GPS(DBG_WARN, "//callback: server->batch_data re-malloc Failed!!");
-		} else {
+		else
 			memset(server->batch_data, 0x00, sizeof(batch_data_t));
-		}
 	}
 	if (server->sv_data == NULL) {
 		server->sv_data = (sv_data_t *) malloc(sizeof(sv_data_t));
-		if (server->sv_data == NULL) {
+		if (server->sv_data == NULL)
 			LOG_GPS(DBG_WARN, "//callback: server->sv_data re-malloc Failed!!");
-		} else {
+		else
 			memset(server->sv_data, 0x00, sizeof(sv_data_t));
-		}
 	}
 	if (server->nmea_data == NULL) {
 		server->nmea_data = (nmea_data_t *) malloc(sizeof(nmea_data_t));
-		if (server->nmea_data == NULL) {
+		if (server->nmea_data == NULL)
 			LOG_GPS(DBG_WARN, "//callback: server->nmea_data re-malloc Failed!!");
-		} else {
+		else
 			memset(server->nmea_data, 0x00, sizeof(nmea_data_t));
-		}
 	}
 
 	_gps_server_set_gps_state(POSITION_SEARCHING);
@@ -680,9 +671,8 @@ static int _gps_server_close_data_connection(gps_server_t *server)
 {
 	LOG_GPS(DBG_LOW, "Enter _gps_server_close_data_connection");
 
-	if (server->dnet_used > 0) {
+	if (server->dnet_used > 0)
 		server->dnet_used--;
-	}
 
 	if (server->dnet_used != 0) {
 		LOG_GPS(DBG_LOW, "Cannot stop the data connection! [ dnet_used : %d ]", server->dnet_used);
@@ -749,19 +739,19 @@ static void _gps_server_send_geofence_result(geofence_event_e event, int geofenc
 	}
 
 	switch (event) {
-		case GEOFENCE_ADD_FENCE:
+	case GEOFENCE_ADD_FENCE:
 			LOG_GPS(DBG_LOW, "Geofence ID[%d], Success ADD_GEOFENCE", geofence_id);
 			break;
-		case GEOFENCE_DELETE_FENCE:
+	case GEOFENCE_DELETE_FENCE:
 			LOG_GPS(DBG_LOW, "Geofence ID[%d], Success DELETE_GEOFENCE", geofence_id);
 			break;
-		case GEOFENCE_PAUSE_FENCE:
+	case GEOFENCE_PAUSE_FENCE:
 			LOG_GPS(DBG_LOW, "Geofence ID[%d], Success PAUSE_GEOFENCE", geofence_id);
 			break;
-		case GEOFENCE_RESUME_FENCE:
+	case GEOFENCE_RESUME_FENCE:
 			LOG_GPS(DBG_LOW, "Geofence ID[%d], Success RESUME_GEOFENCE", geofence_id);
 			break;
-		default:
+	default:
 			break;
 	}
 }
@@ -777,7 +767,7 @@ static int _gps_server_gps_event_cb(gps_event_info_t *gps_event_info, void *user
 	}
 
 	switch (gps_event_info->event_id) {
-		case GPS_EVENT_START_SESSION:
+	case GPS_EVENT_START_SESSION:
 			LOG_GPS(DBG_LOW, "<<::::::::::: GPS_EVENT_START_SESSION :::::::::::::::");
 			if (gps_event_info->event_data.start_session_rsp.error == GPS_ERR_NONE) {
 				_gps_server_start_event(server);
@@ -786,7 +776,7 @@ static int _gps_server_gps_event_cb(gps_event_info_t *gps_event_info, void *user
 						gps_event_info->event_data.start_session_rsp.error);
 			}
 			break;
-		case GPS_EVENT_SET_OPTION: {
+	case GPS_EVENT_SET_OPTION: {
 				LOG_GPS(DBG_LOW, "<<::::::::::: GPS_EVENT_SET_OPTION :::::::::::::::");
 				if (gps_event_info->event_data.set_option_rsp.error != GPS_ERR_NONE) {
 					LOG_GPS(DBG_ERR, "//Set Option Failed, error : %d",
@@ -795,7 +785,7 @@ static int _gps_server_gps_event_cb(gps_event_info_t *gps_event_info, void *user
 			}
 			break;
 
-		case GPS_EVENT_STOP_SESSION:
+	case GPS_EVENT_STOP_SESSION:
 			LOG_GPS(DBG_LOW, "<<::::::::::: GPS_EVENT_STOP_SESSION :::::::::::::::");
 			if (gps_event_info->event_data.stop_session_rsp.error == GPS_ERR_NONE) {
 				_gps_server_close_data_connection(server);
@@ -806,7 +796,7 @@ static int _gps_server_gps_event_cb(gps_event_info_t *gps_event_info, void *user
 			}
 
 			break;
-		case GPS_EVENT_CHANGE_INTERVAL:
+	case GPS_EVENT_CHANGE_INTERVAL:
 			LOG_GPS(DBG_LOW, "<<::::::::::: GPS_EVENT_CHANGE_INTERVAL :::::::::::::::");
 			if (gps_event_info->event_data.change_interval_rsp.error == GPS_ERR_NONE) {
 				LOG_GPS(DBG_LOW, "Change interval success.");
@@ -815,23 +805,23 @@ static int _gps_server_gps_event_cb(gps_event_info_t *gps_event_info, void *user
 						gps_event_info->event_data.change_interval_rsp.error);
 			}
 			break;
-		case GPS_EVENT_REPORT_POSITION:
+	case GPS_EVENT_REPORT_POSITION:
 			LOG_GPS(DBG_LOW, "<<::::::::::: GPS_EVENT_POSITION :::::::::::::::");
-			if (gps_event_info->event_data.pos_ind.error == GPS_ERR_NONE) {
+			if (gps_event_info->event_data.pos_ind.error == GPS_ERR_NONE)
 				_report_pos_event(server, gps_event_info);
-			} else {
+			else
 				LOG_GPS(DBG_ERR, "GPS_EVENT_POSITION Failed, error : %d", gps_event_info->event_data.pos_ind.error);
-			}
+
 			break;
-		case GPS_EVENT_REPORT_BATCH:
+	case GPS_EVENT_REPORT_BATCH:
 			LOG_GPS(DBG_LOW, "<<::::::::::: GPS_EVENT_BATCH :::::::::::::::");
-			if (gps_event_info->event_data.batch_ind.error == GPS_ERR_NONE) {
+			if (gps_event_info->event_data.batch_ind.error == GPS_ERR_NONE)
 				_report_batch_event(server, gps_event_info);
-			} else {
+			else
 				LOG_GPS(DBG_ERR, "GPS_EVENT_BATCH Failed, error : %d", gps_event_info->event_data.batch_ind.error);
-			}
+
 			break;
-		case GPS_EVENT_REPORT_SATELLITE:
+	case GPS_EVENT_REPORT_SATELLITE:
 			if (gps_event_info->event_data.sv_ind.error == GPS_ERR_NONE) {
 				if (gps_event_info->event_data.sv_ind.sv.pos_valid) {
 					if (_gps_server_get_gps_state() != POSITION_CONNECTED)
@@ -846,48 +836,46 @@ static int _gps_server_gps_event_cb(gps_event_info_t *gps_event_info, void *user
 				LOG_GPS(DBG_ERR, "GPS_EVENT_SATELLITE Failed, error : %d", gps_event_info->event_data.sv_ind.error);
 			}
 			break;
-		case GPS_EVENT_REPORT_NMEA:
-			if (_gps_server_get_gps_state() != POSITION_CONNECTED) {
+	case GPS_EVENT_REPORT_NMEA:
+			/* if (_gps_server_get_gps_state() != POSITION_CONNECTED) */
 				/*LOG_GPS(DBG_LOW, "<<::::::::::: GPS_EVENT_NMEA :::::::::::::::"); */
-			}
 
-			if (gps_event_info->event_data.nmea_ind.error == GPS_ERR_NONE) {
+			if (gps_event_info->event_data.nmea_ind.error == GPS_ERR_NONE)
 				_report_nmea_event(server, gps_event_info);
-			} else {
+			else
 				LOG_GPS(DBG_ERR, "GPS_EVENT_NMEA Failed, error : %d", gps_event_info->event_data.nmea_ind.error);
-			}
+
 			break;
-		case GPS_EVENT_ERR_CAUSE:
+	case GPS_EVENT_ERR_CAUSE:
 			break;
-		case GPS_EVENT_AGPS_VERIFICATION_INDI:
+	case GPS_EVENT_AGPS_VERIFICATION_INDI:
 			break;
-		case GPS_EVENT_GET_IMSI:
+	case GPS_EVENT_GET_IMSI:
 			break;
-		case GPS_EVENT_GET_REF_LOCATION:
+	case GPS_EVENT_GET_REF_LOCATION:
 			break;
-		case GPS_EVENT_OPEN_DATA_CONNECTION: {
+	case GPS_EVENT_OPEN_DATA_CONNECTION: {
 				LOG_GPS(DBG_LOW, "<<::::::::::: GPS_EVENT_OPEN_DATA_CONNECTION :::::::::::::::");
 				result = _gps_server_open_data_connection(server);
 			}
 			break;
-		case GPS_EVENT_CLOSE_DATA_CONNECTION: {
+	case GPS_EVENT_CLOSE_DATA_CONNECTION: {
 				LOG_GPS(DBG_LOW, "<<::::::::::: GPS_EVENT_CLOSE_DATA_CONNECTION :::::::::::::::");
 				result = _gps_server_close_data_connection(server);
 			}
 			break;
-		case GPS_EVENT_DNS_LOOKUP_IND:
+	case GPS_EVENT_DNS_LOOKUP_IND:
 			LOG_GPS(DBG_LOW, "<<::::::::::: GPS_EVENT_DNS_LOOKUP_IND :::::::::::::::");
-			if (gps_event_info->event_data.dns_query_ind.error == GPS_ERR_NONE) {
+			if (gps_event_info->event_data.dns_query_ind.error == GPS_ERR_NONE)
 				result = _gps_server_resolve_dns(gps_event_info->event_data.dns_query_ind.domain_name);
-			} else {
+			else
 				result = FALSE;
-			}
-			if (result == TRUE) {
-				LOG_GPS(DBG_LOW, "Success to get the DNS Query about [ %s ]",
-						gps_event_info->event_data.dns_query_ind.domain_name);
-			}
+
+			if (result == TRUE)
+				LOG_GPS(DBG_LOW, "Success to get the DNS Query about [ %s ]", gps_event_info->event_data.dns_query_ind.domain_name);
+
 			break;
-		case GPS_EVENT_FACTORY_TEST:
+	case GPS_EVENT_FACTORY_TEST:
 			LOG_GPS(DBG_LOW, "<<::::::::::: GPS_EVENT_FACTORY_TEST :::::::::::::::");
 			if (gps_event_info->event_data.factory_test_rsp.error == GPS_ERR_NONE) {
 				LOG_GPS(DBG_LOW, "[LBS server] Response Factory test result success");
@@ -899,7 +887,7 @@ static int _gps_server_gps_event_cb(gps_event_info_t *gps_event_info, void *user
 												 gps_event_info->event_data.factory_test_rsp.prn, FALSE);
 			}
 			break;
-		case GPS_EVENT_GEOFENCE_TRANSITION:
+	case GPS_EVENT_GEOFENCE_TRANSITION:
 			LOG_GPS(DBG_LOW, "<<::::::::::: GPS_EVENT_GEOFENCE_TRANSITION :::::::::::::::");
 			_report_geofence_transition(gps_event_info->event_data.geofence_transition_ind.geofence_id,
 										gps_event_info->event_data.geofence_transition_ind.state,
@@ -910,35 +898,35 @@ static int _gps_server_gps_event_cb(gps_event_info_t *gps_event_info, void *user
 										gps_event_info->event_data.geofence_transition_ind.pos.bearing,
 										gps_event_info->event_data.geofence_transition_ind.pos.hor_accuracy);
 			break;
-		case GPS_EVENT_GEOFENCE_STATUS:
+	case GPS_EVENT_GEOFENCE_STATUS:
 			LOG_GPS(DBG_LOW, "<<::::::::::: GPS_EVENT_GEOFENCE_STATUS :::::::::::::::");
 			_report_geofence_service_status(gps_event_info->event_data.geofence_status_ind.status);
 			break;
-		case GPS_EVENT_ADD_GEOFENCE:
+	case GPS_EVENT_ADD_GEOFENCE:
 			LOG_GPS(DBG_LOW, "<<::::::::::: GPS_EVENT_ADD_GEOFENCE :::::::::::::::");
 			_gps_server_send_geofence_result(GEOFENCE_ADD_FENCE,
 											 gps_event_info->event_data.geofence_event_rsp.geofence_id,
 											 gps_event_info->event_data.geofence_event_rsp.error);
 			break;
-		case GPS_EVENT_DELETE_GEOFENCE:
+	case GPS_EVENT_DELETE_GEOFENCE:
 			LOG_GPS(DBG_LOW, "<<::::::::::: GPS_EVENT_DELETE_GEOFENCE :::::::::::::::");
 			_gps_server_send_geofence_result(GEOFENCE_DELETE_FENCE,
 											 gps_event_info->event_data.geofence_event_rsp.geofence_id,
 											 gps_event_info->event_data.geofence_event_rsp.error);
 			break;
-		case GPS_EVENT_PAUSE_GEOFENCE:
+	case GPS_EVENT_PAUSE_GEOFENCE:
 			LOG_GPS(DBG_LOW, "<<::::::::::: GPS_EVENT_PAUSE_GEOFENCE :::::::::::::::");
 			_gps_server_send_geofence_result(GEOFENCE_PAUSE_FENCE,
 											 gps_event_info->event_data.geofence_event_rsp.geofence_id,
 											 gps_event_info->event_data.geofence_event_rsp.error);
 			break;
-		case GPS_EVENT_RESUME_GEOFENCE:
+	case GPS_EVENT_RESUME_GEOFENCE:
 			LOG_GPS(DBG_LOW, "<<::::::::::: GPS_EVENT_RESUME_GEOFENCE :::::::::::::::");
 			_gps_server_send_geofence_result(GEOFENCE_RESUME_FENCE,
 											 gps_event_info->event_data.geofence_event_rsp.geofence_id,
 											 gps_event_info->event_data.geofence_event_rsp.error);
 			break;
-		default:
+	default:
 			LOG_GPS(DBG_WARN, "//Error: Isettingalid Event Type %d", gps_event_info->event_id);
 			break;
 	}
@@ -973,9 +961,8 @@ static void *request_supl_ni_session(void *data)
 	info.msg_size = ni_data->msg_size;
 	info.status = TRUE;
 
-	if (!get_plugin_module()->request(GPS_ACTION_REQUEST_SUPL_NI, &info, &reason_code)) {
+	if (!get_plugin_module()->request(GPS_ACTION_REQUEST_SUPL_NI, &info, &reason_code))
 		LOG_GPS(DBG_ERR, "Failed to request SUPL NI (code:%d)", reason_code);
-	}
 
 	free(ni_data);
 
@@ -998,9 +985,8 @@ static void _gps_supl_networkinit_smscb(msg_handle_t hMsgHandle, msg_struct_t ms
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-	if (pthread_create(&server->popup_thread, &attr, request_supl_ni_session, new_message) != 0) {
+	if (pthread_create(&server->popup_thread, &attr, request_supl_ni_session, new_message) != 0)
 		LOG_GPS(DBG_WARN, "Can not make pthread......");
-	}
 }
 
 static void _gps_supl_networkinit_wappushcb(msg_handle_t hMsgHandle, const char *pPushHeader, const char *pPushBody,
@@ -1030,9 +1016,8 @@ static void _gps_supl_networkinit_wappushcb(msg_handle_t hMsgHandle, const char 
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-	if (pthread_create(&server->popup_thread, &attr, request_supl_ni_session, new_message) != 0) {
+	if (pthread_create(&server->popup_thread, &attr, request_supl_ni_session, new_message) != 0)
 		LOG_GPS(DBG_WARN, "Can not make pthread......");
-	}
 }
 
 static void *_gps_register_msgfwcb(void *data)
@@ -1238,9 +1223,8 @@ int initialize_server(int argc, char **argv)
 	}
 
 #ifdef _TIZEN_PUBLIC_
-	if (pthread_create(&g_gps_server->msg_thread, NULL, _gps_register_msgfwcb, g_gps_server) != 0) {
+	if (pthread_create(&g_gps_server->msg_thread, NULL, _gps_register_msgfwcb, g_gps_server) != 0)
 		LOG_GPS(DBG_WARN, "Can not make pthread......");
-	}
 #endif
 
 	LOG_GPS(DBG_LOW, "Initialization-gps is completed.");
@@ -1266,9 +1250,9 @@ int deinitialize_server()
 
 	_gps_ignore_params();
 
-	if (!get_plugin_module()->deinit(&ReasonCode)) {
+	if (!get_plugin_module()->deinit(&ReasonCode))
 		LOG_GPS(DBG_WARN, "Fail to gps module de-initialization");
-	}
+
 	unload_plugin_module(g_gps_server->gps_plugin.handle);
 
 	_gps_plugin_handler_deinit(g_gps_server);

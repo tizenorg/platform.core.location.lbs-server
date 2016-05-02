@@ -92,11 +92,10 @@ static void position_callback(GVariant *param, void *user_data)
 	LocationVelocity *vel = NULL;
 	LocationAccuracy *acc = NULL;
 
-	if (altitude) {
+	if (altitude)
 		pos = location_position_new(timestamp, latitude, longitude, altitude, LOCATION_STATUS_3D_FIX);
-	} else {
+	else
 		pos = location_position_new(timestamp, latitude, longitude, 0.0, LOCATION_STATUS_2D_FIX);
-	}
 
 	vel = location_velocity_new(timestamp, speed, direction, climb);
 	acc = location_accuracy_new(LOCATION_ACCURACY_LEVEL_DETAILED, horizontal, vertical);
@@ -112,14 +111,12 @@ static void position_callback(GVariant *param, void *user_data)
 
 static void on_signal_callback(const gchar *sig, GVariant *param, gpointer user_data)
 {
-	if (!g_strcmp0(sig, "PositionChanged")) {
+	if (!g_strcmp0(sig, "PositionChanged"))
 		position_callback(param, user_data);
-	} else if (!g_strcmp0(sig, "StatusChanged")) {
+	else if (!g_strcmp0(sig, "StatusChanged"))
 		status_callback(param, user_data);
-	} else {
+	else
 		MOD_NPS_LOGD("Invaild signal[%s]", sig);
-	}
-
 }
 
 static int start(gpointer handle, LocModStatusCB status_cb, LocModPositionExtCB pos_cb, gpointer userdata)
@@ -141,8 +138,7 @@ static int start(gpointer handle, LocModStatusCB status_cb, LocModPositionExtCB 
 		return LOCATION_ERROR_NOT_AVAILABLE;
 	}
 
-	ret = lbs_client_start(mod_nps->lbs_client, 1, 
-		LBS_CLIENT_LOCATION_CB | LBS_CLIENT_LOCATION_STATUS_CB, on_signal_callback, mod_nps);
+	ret = lbs_client_start(mod_nps->lbs_client, 1, LBS_CLIENT_LOCATION_CB | LBS_CLIENT_LOCATION_STATUS_CB, on_signal_callback, mod_nps);
 	if (ret != LBS_CLIENT_ERROR_NONE) {
 		if (ret == LBS_CLIENT_ERROR_ACCESS_DENIED) {
 			MOD_NPS_LOGE("Access denied[%d]", ret);
@@ -179,9 +175,8 @@ static int stop(gpointer handle)
 	lbs_client_destroy(mod_nps->lbs_client);
 	mod_nps->lbs_client = NULL;
 
-	if (mod_nps->status_cb) {
+	if (mod_nps->status_cb)
 		mod_nps->status_cb(FALSE, LOCATION_STATUS_NO_FIX, mod_nps->userdata);
-	}
 
 	mod_nps->status_cb = NULL;
 	mod_nps->pos_cb = NULL;
@@ -230,10 +225,12 @@ static int get_last_position(gpointer handle, LocationPosition **position, Locat
 			}
 		} else {
 			if (vconf_get_int(VCONFKEY_LOCATION_NV_LAST_WPS_TIMESTAMP, &timestamp)) {
+				MOD_NPS_LOGD("Last timestamp failed");
 				return LOCATION_ERROR_NOT_AVAILABLE;
 			}
 			str = vconf_get_str(VCONFKEY_LOCATION_NV_LAST_WPS_LOCATION);
 			if (str == NULL) {
+				MOD_NPS_LOGD("Last wps is null");
 				return LOCATION_ERROR_NOT_AVAILABLE;
 			}
 			snprintf(location, sizeof(location), "%s", str);
@@ -245,7 +242,9 @@ static int get_last_position(gpointer handle, LocationPosition **position, Locat
 					break;
 				last_location[index] = (char *)strtok_r(NULL, ";", &last);
 			}
+
 			if (index != MAX_NPS_LOC_ITEM) {
+				MOD_NPS_LOGD("Error item index");
 				return LOCATION_ERROR_NOT_AVAILABLE;
 			}
 			index = 0;
@@ -259,11 +258,11 @@ static int get_last_position(gpointer handle, LocationPosition **position, Locat
 	}
 
 	level = LOCATION_ACCURACY_LEVEL_STREET;
-	if (timestamp) {
+
+	if (timestamp)
 		status = LOCATION_STATUS_3D_FIX;
-	} else {
+	else
 		return LOCATION_ERROR_NOT_AVAILABLE;
-	}
 
 	*position = location_position_new((guint) timestamp, latitude, longitude, altitude, status);
 	*velocity = location_velocity_new((guint) timestamp, speed, direction, 0.0);
@@ -298,9 +297,9 @@ LOCATION_MODULE_API void shutdown(gpointer handle)
 	g_return_if_fail(mod_nps);
 
 	if (mod_nps->lbs_client) {
-		if (mod_nps->is_started) {
+		if (mod_nps->is_started)
 			lbs_client_stop(mod_nps->lbs_client);
-		}
+
 		lbs_client_destroy(mod_nps->lbs_client);
 		mod_nps->lbs_client = NULL;
 	}

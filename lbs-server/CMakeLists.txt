@@ -18,7 +18,7 @@ SET(SERVER_SRCS
 )
 
 INCLUDE_DIRECTORIES(
-	src	
+	src
 	include
 )
 
