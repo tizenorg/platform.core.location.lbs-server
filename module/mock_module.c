@@ -50,13 +50,13 @@ typedef struct {
 } ModMockData;
 
 typedef enum {
-	LBS_STATUS_ERROR, //from lbs-server
-	LBS_STATUS_UNAVAILABLE, //from lbs-server
-	LBS_STATUS_ACQUIRING,  // from lbs-server
-	LBS_STATUS_AVAILABLE, // from lbs-server
-	LBS_STATUS_BATCH, //from lbs-server
-	LBS_STATUS_MOCK_SET, //from lbs-dbus status for mock location
-	LBS_STATUS_MOCK_FAIL, // from lbs-dbus status fro mock location
+	LBS_STATUS_ERROR,		/* from lbs-server */
+	LBS_STATUS_UNAVAILABLE,
+	LBS_STATUS_ACQUIRING,
+	LBS_STATUS_AVAILABLE,
+	LBS_STATUS_BATCH,
+	LBS_STATUS_MOCK_SET,	/* from lbs-dbus status for mock location */
+	LBS_STATUS_MOCK_FAIL,
 } LbsStatus;
 
 static void __status_callback(GVariant *param, void *user_data)
@@ -124,16 +124,15 @@ static void __position_callback(GVariant *param, void *user_data)
 
 static void __on_signal_callback(const gchar *sig, GVariant *param, gpointer user_data)
 {
-	if (!g_strcmp0(sig, "PositionChanged")) {
+	if (!g_strcmp0(sig, "PositionChanged"))
 		__position_callback(param, user_data);
-	} else if (!g_strcmp0(sig, "StatusChanged")) {
+	else if (!g_strcmp0(sig, "StatusChanged"))
 		__status_callback(param, user_data);
-	} else {
+	else
 		MOD_MOCK_LOGD("Invaild signal[%s]", sig);
-	}
 }
 
-//static int start(gpointer handle, guint pos_update_interval, LocModStatusCB status_cb, LocModPositionExtCB pos_cb, gpointer userdata)
+/*static int start(gpointer handle, guint pos_update_interval, LocModStatusCB status_cb, LocModPositionExtCB pos_cb, gpointer userdata)*/
 static int start(gpointer handle, LocModStatusCB status_cb, LocModPositionExtCB pos_cb, gpointer userdata)
 {
 	MOD_MOCK_LOGD("ENTER >>>");
@@ -156,8 +155,7 @@ static int start(gpointer handle, LocModStatusCB status_cb, LocModPositionExtCB 
 	}
 	MOD_MOCK_LOGD("mod_mock(%p) pos_cb(%p) user_data(%p)", mod_mock, mod_mock->pos_cb, mod_mock->userdata);
 
-	ret = lbs_client_start(mod_mock->lbs_client, 1, 
-		LBS_CLIENT_LOCATION_CB | LBS_CLIENT_LOCATION_STATUS_CB, __on_signal_callback, mod_mock);
+	ret = lbs_client_start(mod_mock->lbs_client, 1, LBS_CLIENT_LOCATION_CB | LBS_CLIENT_LOCATION_STATUS_CB, __on_signal_callback, mod_mock);
 	if (ret != LBS_CLIENT_ERROR_NONE) {
 		if (ret == LBS_CLIENT_ERROR_ACCESS_DENIED) {
 			MOD_MOCK_LOGE("Access denied[%d]", ret);
@@ -199,9 +197,9 @@ static int stop(gpointer handle)
 	}
 	mod_mock->lbs_client = NULL;
 
-	if (mod_mock->status_cb) {
+	if (mod_mock->status_cb)
 		mod_mock->status_cb(FALSE, LOCATION_STATUS_NO_FIX, mod_mock->userdata);
-	}
+
 	mod_mock->status_cb = NULL;
 	mod_mock->pos_cb = NULL;
 
@@ -223,11 +221,12 @@ static int get_last_position(gpointer handle, LocationPosition **position, Locat
 
 	if (mod_mock->last_pos)
 		*position = location_position_copy(mod_mock->last_pos);
+
 	if (mod_mock->last_vel)
 		*velocity = location_velocity_copy(mod_mock->last_vel);
-	if (mod_mock->last_acc) {
+
+	if (mod_mock->last_acc)
 		*accuracy = location_accuracy_copy(mod_mock->last_acc);
-	}
 
 	return LOCATION_ERROR_NONE;
 }

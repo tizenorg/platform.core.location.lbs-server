@@ -134,9 +134,8 @@ static unsigned char _get_device_name(char *device_name)
 	char *ret_str;
 
 	ret_str = vconf_get_str(VCONFKEY_SETAPPL_DEVICE_NAME_STR);
-	if (ret_str == NULL) {
+	if (ret_str == NULL)
 		return FALSE;
-	}
 
 	memcpy(device_name, ret_str, strlen(ret_str) + 1);
 

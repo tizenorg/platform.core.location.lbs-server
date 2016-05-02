@@ -103,9 +103,8 @@ typedef struct {
 } dynamic_interval_updator_user_data;
 
 static gboolean gps_remove_all_clients(lbs_server_s *lbs_server);
-static 	NpsManagerPositionExt g_mock_position;
-static void set_mock_location_cb(gint method, gdouble latitude, gdouble longitude, gdouble altitude,
-	gdouble speed, gdouble direction, gdouble accuracy, gpointer userdata);
+static NpsManagerPositionExt g_mock_position;
+static void set_mock_location_cb(gint method, gdouble latitude, gdouble longitude, gdouble altitude, gdouble speed, gdouble direction, gdouble accuracy, gpointer userdata);
 static int mock_start_tracking(lbs_server_s *lbs_server);
 static int mock_stop_tracking(lbs_server_s *lbs_server);
 static void mock_set_status(lbs_server_s *lbs_server, LbsStatus status);
@@ -123,9 +122,9 @@ static void __setting_gps_cb(keynode_t *key, gpointer user_data)
 
 	if (onoff == 0) {
 		ret = gps_remove_all_clients(lbs_server);
-		if (ret == FALSE) {
+
+		if (ret == FALSE)
 			LOG_GPS(DBG_LOW, "already removed.");
-		}
 	}
 }
 
@@ -166,10 +165,8 @@ static void nps_set_position(lbs_server_s *lbs_server_nps, NpsManagerPositionExt
 	setting_get_int(VCONFKEY_LOCATION_NV_LAST_WPS_TIMESTAMP, &last_timestamp);
 
 	LOG_NPS(DBG_LOW, "last_time stamp: %d, pos.timestamp: %d, UPDATE_INTERVAL: %d ", last_timestamp, pos.timestamp, UPDATE_INTERVAL);
-	if ((pos.timestamp - last_timestamp) > UPDATE_INTERVAL) {
+	if ((pos.timestamp - last_timestamp) > UPDATE_INTERVAL)
 		nps_set_last_position(pos);
-	}
-
 }
 
 static void nps_set_status(lbs_server_s *lbs_server_nps, LbsStatus status)
@@ -186,17 +183,15 @@ static void nps_set_status(lbs_server_s *lbs_server_nps, LbsStatus status)
 
 	lbs_server_nps->status = status;
 
-	if (lbs_server_nps->status == LBS_STATUS_AVAILABLE) {
+	if (lbs_server_nps->status == LBS_STATUS_AVAILABLE)
 		setting_set_int(VCONFKEY_LOCATION_WPS_STATE, POSITION_CONNECTED);
-	} else if (lbs_server_nps->status == LBS_STATUS_ACQUIRING) {
+	else if (lbs_server_nps->status == LBS_STATUS_ACQUIRING)
 		setting_set_int(VCONFKEY_LOCATION_WPS_STATE, POSITION_SEARCHING);
-	} else {
+	else
 		setting_set_int(VCONFKEY_LOCATION_WPS_STATE, POSITION_OFF);
-	}
 
-	if (status != LBS_STATUS_AVAILABLE) {
+	if (status != LBS_STATUS_AVAILABLE)
 		lbs_server_nps->pos.fields = LBS_POSITION_FIELDS_NONE;
-	}
 
 	lbs_server_emit_status_changed(lbs_server_nps->lbs_dbus_server, LBS_SERVER_METHOD_NPS, status);
 }
@@ -249,9 +244,8 @@ static gboolean nps_report_callback(gpointer user_data)
 	g_mutex_unlock(&lbs_server_nps->mutex);
 
 	time(&timestamp);
-	if (timestamp == lbs_server_nps->last_pos.timestamp) {
+	if (timestamp == lbs_server_nps->last_pos.timestamp)
 		return FALSE;
-	}
 
 	nps_set_status(lbs_server_nps, LBS_STATUS_AVAILABLE);
 
@@ -333,9 +327,10 @@ static void _nps_token_callback(void *arg, const unsigned char *token, unsigned 
 		/* save the token in persistent storage */
 		g_mutex_lock(&lbs_server_nps->mutex);
 		lbs_server_nps->token = g_new0(unsigned char, tokenSize);
-		if (lbs_server_nps->token) {
+
+		if (lbs_server_nps->token)
 			memcpy(lbs_server_nps->token, token, tokenSize);
-		}
+
 		g_mutex_unlock(&lbs_server_nps->mutex);
 	}
 	LOG_NPS(DBG_LOW, "_nps_token_callback ended");
@@ -471,7 +466,7 @@ static void start_tracking(lbs_server_s *lbs_server, lbs_server_method_e method)
 	int ret = 0;
 
 	switch (method) {
-		case LBS_SERVER_METHOD_GPS:
+	case LBS_SERVER_METHOD_GPS:
 
 			g_mutex_lock(&lbs_server->mutex);
 			lbs_server->gps_client_count++;
@@ -499,7 +494,7 @@ static void start_tracking(lbs_server_s *lbs_server, lbs_server_method_e method)
 
 			break;
 
-		case LBS_SERVER_METHOD_NPS:
+	case LBS_SERVER_METHOD_NPS:
 			g_mutex_lock(&lbs_server->mutex);
 			lbs_server->nps_client_count++;
 			g_mutex_unlock(&lbs_server->mutex);
@@ -527,15 +522,14 @@ static void start_tracking(lbs_server_s *lbs_server, lbs_server_method_e method)
 				return;
 			}
 
-			if (nps_is_dummy_plugin_module() != TRUE) {
+			if (nps_is_dummy_plugin_module() != TRUE)
 				nps_offline_location(lbs_server);
-			}
 
 			LOG_NPS(DBG_ERR, "Filed to start NPS");
 			nps_set_status(lbs_server, LBS_STATUS_ERROR);
 			break;
 
-		case LBS_SERVER_METHOD_MOCK:
+	case LBS_SERVER_METHOD_MOCK:
 			g_mutex_lock(&lbs_server->mutex);
 			lbs_server->mock_client_count++;
 			g_mutex_unlock(&lbs_server->mutex);
@@ -560,7 +554,7 @@ static void start_tracking(lbs_server_s *lbs_server, lbs_server_method_e method)
 			}
 			break;
 
-		default:
+	default:
 			LOG_GPS(DBG_LOW, "start_tracking Invalid");
 			break;
 	}
@@ -578,9 +572,10 @@ static gboolean nps_stop(lbs_server_s *lbs_server_nps)
 	int ret = get_nps_plugin_module()->stop(lbs_server_nps->handle, __nps_cancel_callback, lbs_server_nps);
 	if (ret) {
 		g_mutex_lock(&lbs_server_nps->mutex);
-		while (lbs_server_nps->is_nps_running) {
+
+		while (lbs_server_nps->is_nps_running)
 			g_cond_wait(&lbs_server_nps->cond, &lbs_server_nps->mutex);
-		}
+
 		lbs_server_nps->is_nps_running = FALSE;
 		g_mutex_unlock(&lbs_server_nps->mutex);
 	}
@@ -602,86 +597,85 @@ static gboolean nps_stop(lbs_server_s *lbs_server_nps)
 static void stop_tracking(lbs_server_s *lbs_server, lbs_server_method_e method)
 {
 	switch (method) {
-		case LBS_SERVER_METHOD_GPS:
-			LOG_GPS(DBG_LOW, "stop_tracking GPS");
+	case LBS_SERVER_METHOD_GPS:
+		LOG_GPS(DBG_LOW, "stop_tracking GPS");
 
-			gps_set_last_position(&lbs_server->position);
+		gps_set_last_position(&lbs_server->position);
 
+		g_mutex_lock(&lbs_server->mutex);
+		lbs_server->gps_client_count--;
+		g_mutex_unlock(&lbs_server->mutex);
+
+		if (lbs_server->is_gps_running == FALSE) {
+			LOG_GPS(DBG_LOW, "gps is already stopped");
+			return;
+		}
+
+		if (lbs_server->gps_client_count <= 0) {
 			g_mutex_lock(&lbs_server->mutex);
-			lbs_server->gps_client_count--;
+			lbs_server->gps_client_count = 0;
+
+			if (request_stop_session() == TRUE) {
+				lbs_server->is_gps_running = FALSE;
+				lbs_server->sv_used = FALSE;
+				/* remove notify */
+				setting_ignore_key_changed(VCONFKEY_LOCATION_ENABLED, __setting_gps_cb);
+			}
+			g_mutex_unlock(&lbs_server->mutex);
+		}
+
+		lbs_server->status = LBS_STATUS_UNAVAILABLE;
+		lbs_server_emit_status_changed(lbs_server->lbs_dbus_server, LBS_SERVER_METHOD_GPS, LBS_STATUS_UNAVAILABLE);
+
+		break;
+	case LBS_SERVER_METHOD_NPS:
+		LOG_NPS(DBG_LOW, "stop_tracking NPS");
+
+		g_mutex_lock(&lbs_server->mutex);
+		lbs_server->nps_client_count--;
+		g_mutex_unlock(&lbs_server->mutex);
+
+		if (lbs_server->is_nps_running == FALSE) {
+			LOG_NPS(DBG_LOW, "nps is already stopped");
+			return;
+		}
+
+		if (lbs_server->nps_client_count <= 0) {
+			g_mutex_lock(&lbs_server->mutex);
+			lbs_server->nps_client_count = 0;
 			g_mutex_unlock(&lbs_server->mutex);
 
-			if (lbs_server->is_gps_running == FALSE) {
-				LOG_GPS(DBG_LOW, "gps is already stopped");
-				return;
-			}
+			LOG_NPS(DBG_LOW, "lbs_server_nps Normal stop");
+			nps_stop(lbs_server);
+		}
 
-			if (lbs_server->gps_client_count <= 0) {
-				g_mutex_lock(&lbs_server->mutex);
-				lbs_server->gps_client_count = 0;
+		break;
+	case LBS_SERVER_METHOD_MOCK:
+		LOG_NPS(DBG_LOW, "stop_tracking MOCK");
 
-				if (request_stop_session() == TRUE) {
-					lbs_server->is_gps_running = FALSE;
-					lbs_server->sv_used = FALSE;
-					/* remove notify */
-					setting_ignore_key_changed(VCONFKEY_LOCATION_ENABLED, __setting_gps_cb);
-				}
-				g_mutex_unlock(&lbs_server->mutex);
-			}
+		g_mutex_lock(&lbs_server->mutex);
+		lbs_server->mock_client_count--;
+		g_mutex_unlock(&lbs_server->mutex);
 
-			lbs_server->status = LBS_STATUS_UNAVAILABLE;
-			lbs_server_emit_status_changed(lbs_server->lbs_dbus_server, LBS_SERVER_METHOD_GPS,
-											LBS_STATUS_UNAVAILABLE);
+		if (lbs_server->is_mock_running == FALSE) {
+			LOG_NPS(DBG_LOW, "mock is already stopped");
+			return;
+		}
 
-			break;
-		case LBS_SERVER_METHOD_NPS:
-			LOG_NPS(DBG_LOW, "stop_tracking NPS");
-
+		if (lbs_server->mock_client_count <= 0) {
 			g_mutex_lock(&lbs_server->mutex);
-			lbs_server->nps_client_count--;
+			lbs_server->mock_client_count = 0;
 			g_mutex_unlock(&lbs_server->mutex);
 
-			if (lbs_server->is_nps_running == FALSE) {
-				LOG_NPS(DBG_LOW, "nps is already stopped");
-				return;
-			}
+			LOG_NPS(DBG_LOW, "lbs_server_mock Normal stop");
+			mock_stop_tracking(lbs_server);
+			setting_ignore_key_changed(VCONFKEY_LOCATION_MOCK_ENABLED, __setting_mock_cb);
+		}
 
-			if (lbs_server->nps_client_count <= 0) {
-				g_mutex_lock(&lbs_server->mutex);
-				lbs_server->nps_client_count = 0;
-				g_mutex_unlock(&lbs_server->mutex);
-
-				LOG_NPS(DBG_LOW, "lbs_server_nps Normal stop");
-				nps_stop(lbs_server);
-			}
-
-			break;
-		case LBS_SERVER_METHOD_MOCK:
-			LOG_NPS(DBG_LOW, "stop_tracking MOCK");
-
-			g_mutex_lock(&lbs_server->mutex);
-			lbs_server->mock_client_count--;
-			g_mutex_unlock(&lbs_server->mutex);
-
-			if (lbs_server->is_mock_running == FALSE) {
-				LOG_NPS(DBG_LOW, "mock is already stopped");
-				return;
-			}
-
-			if (lbs_server->mock_client_count <= 0) {
-				g_mutex_lock(&lbs_server->mutex);
-				lbs_server->mock_client_count = 0;
-				g_mutex_unlock(&lbs_server->mutex);
-
-				LOG_NPS(DBG_LOW, "lbs_server_mock Normal stop");
-				mock_stop_tracking(lbs_server);
-				setting_ignore_key_changed(VCONFKEY_LOCATION_MOCK_ENABLED, __setting_mock_cb);
-			}
-
-			break;
-		default:
-			LOG_GPS(DBG_LOW, "stop_tracking Invalid");
-			break;
+		break;
+	default:
+		LOG_GPS(DBG_LOW, "stop_tracking Invalid");
+		break;
 	}
 }
 
@@ -693,9 +687,8 @@ static void update_dynamic_interval_table_foreach_cb(gpointer key, gpointer valu
 	int method = updator_ud->method;
 
 	LOG_GPS(DBG_LOW, "method:[%d], key:[%s] interval:[%u], current optimized interval [%u]", method, (char *)key, interval_array[method], lbs_server->optimized_interval_array[method]);
-	if ((lbs_server->temp_minimum_interval > interval_array[method])) {
+	if ((lbs_server->temp_minimum_interval > interval_array[method]))
 		lbs_server->temp_minimum_interval = interval_array[method];
-	}
 }
 
 static gboolean update_pos_tracking_interval(lbs_server_interval_manipulation_type type, const gchar *client, int method, guint interval, gpointer userdata)
@@ -764,9 +757,9 @@ static gboolean update_pos_tracking_interval(lbs_server_interval_manipulation_ty
 
 				if (is_need_remove_client_from_table) {
 					LOG_GPS(DBG_LOW, "is_need_remove_client_from_table is TRUE");
-					if (!g_hash_table_remove(lbs_server->dynamic_interval_table, client)) {
+					if (!g_hash_table_remove(lbs_server->dynamic_interval_table, client))
 						LOG_GPS(DBG_ERR, "g_hash_table_remove is failed.");
-					}
+
 					LOG_GPS(DBG_LOW, "REMOVE done.");
 				}
 				break;
@@ -795,9 +788,9 @@ static gboolean update_pos_tracking_interval(lbs_server_interval_manipulation_ty
 	if (g_hash_table_size(lbs_server->dynamic_interval_table) == 0) {
 		LOG_GPS(DBG_LOW, "dynamic_interval_table size is zero. It will be updated all value as 0");
 		int i = 0;
-		for (i = 0; i < LBS_SERVER_METHOD_SIZE; i++) {
+		for (i = 0; i < LBS_SERVER_METHOD_SIZE; i++)
 			lbs_server->optimized_interval_array[i] = 0;
-		}
+
 		ret_val = FALSE;
 	} else {
 		LOG_GPS(DBG_LOW, "dynamic_interval_table size is not zero.");
@@ -817,11 +810,10 @@ static gboolean update_pos_tracking_interval(lbs_server_interval_manipulation_ty
 			lbs_server->is_needed_changing_interval = TRUE;
 		}
 
-		if (lbs_server->is_needed_changing_interval) {
+		if (lbs_server->is_needed_changing_interval)
 			ret_val = TRUE;
-		} else {
+		else
 			ret_val = FALSE;
-		}
 	}
 	LOG_GPS(DBG_LOW, "update_pos_tracking_interval done.");
 	return ret_val;
@@ -834,11 +826,11 @@ static void request_change_pos_update_interval(int method, gpointer userdata)
 
 	lbs_server_s *lbs_server = (lbs_server_s *)userdata;
 	switch (method) {
-		case LBS_SERVER_METHOD_GPS:
-			request_change_pos_update_interval_standalone_gps(lbs_server->optimized_interval_array[method]);
-			break;
-		default:
-			break;
+	case LBS_SERVER_METHOD_GPS:
+		request_change_pos_update_interval_standalone_gps(lbs_server->optimized_interval_array[method]);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -900,14 +892,13 @@ static void set_options(GVariant *options, const gchar *client, gpointer userdat
 				}
 			}
 
-			if (client) {
+			if (client)
 				update_pos_tracking_interval(LBS_SERVER_INTERVAL_ADD, client, method, interval, lbs_server);
-			}
 
 			if (app_id) {
-				if (LBS_SERVER_METHOD_GPS == method) {
+				if (LBS_SERVER_METHOD_GPS == method)
 					gps_dump_log("START GPS", app_id);
-				}
+
 				free(app_id);
 			}
 
@@ -931,14 +922,13 @@ static void set_options(GVariant *options, const gchar *client, gpointer userdat
 				}
 			}
 
-			if (client) {
+			if (client)
 				update_pos_tracking_interval(LBS_SERVER_INTERVAL_REMOVE, client, method, interval, lbs_server);
-			}
 
 			if (app_id) {
-				if (LBS_SERVER_METHOD_GPS == method) {
+				if (LBS_SERVER_METHOD_GPS == method)
 					gps_dump_log("STOP GPS", app_id);
-				}
+
 				free(app_id);
 			}
 
@@ -963,9 +953,8 @@ static void set_options(GVariant *options, const gchar *client, gpointer userdat
 				}
 			}
 
-			if (client) {
+			if (client)
 				update_pos_tracking_interval(LBS_SERVER_INTERVAL_ADD, client, method, batch_interval, lbs_server);
-			}
 
 			start_batch_tracking(lbs_server, batch_interval, batch_period);
 
@@ -976,9 +965,8 @@ static void set_options(GVariant *options, const gchar *client, gpointer userdat
 
 		} else if (!g_strcmp0(g_variant_get_string(value, &length), "STOP_BATCH")) {
 
-			if (client) {
+			if (client)
 				update_pos_tracking_interval(LBS_SERVER_INTERVAL_REMOVE, client, method, interval, lbs_server);
-			}
 
 			stop_batch_tracking(lbs_server);
 
@@ -1016,9 +1004,8 @@ static void set_options(GVariant *options, const gchar *client, gpointer userdat
 					LOG_GPS(DBG_ERR, "option [%s]", option);
 
 					if (!g_strcmp0(option, "DELGPS")) {
-						if (request_delete_gps_data() != TRUE) {
+						if (request_delete_gps_data() != TRUE)
 							LOG_GPS(DBG_ERR, "Fail to request_delete_gps_data");
-						}
 					} else if (!g_strcmp0(option, "USE_SV")) {
 						g_mutex_lock(&lbs_server->mutex);
 						if (lbs_server->sv_used == FALSE)
@@ -1076,9 +1063,8 @@ static void shutdown(gpointer userdata, gboolean *shutdown_arr)
 	if (shutdown_arr[LBS_SERVER_METHOD_GPS]) {
 		LOG_GPS(DBG_LOW, "-> shutdown GPS");
 		if (lbs_server->is_gps_running) {
-			if (gps_remove_all_clients(lbs_server)) {
+			if (gps_remove_all_clients(lbs_server))
 				LOG_GPS(DBG_ERR, "<<<< Abnormal shutdown >>>>");
-			}
 		}
 	}
 
@@ -1102,13 +1088,11 @@ static void shutdown(gpointer userdata, gboolean *shutdown_arr)
 	int enabled = 0;
 	setting_get_int(VCONFKEY_LOCATION_NETWORK_ENABLED, &enabled);
 	if (enabled == 0) {
-		if (lbs_server->loop != NULL) {
+		if (lbs_server->loop != NULL)
 			g_main_loop_quit(lbs_server->loop);
-		}
 	} else {
-		if (vconf_notify_key_changed(VCONFKEY_LOCATION_NETWORK_ENABLED, _network_enabled_cb, lbs_server)) {
+		if (vconf_notify_key_changed(VCONFKEY_LOCATION_NETWORK_ENABLED, _network_enabled_cb, lbs_server))
 			LOG_NPS(DBG_ERR, "fail to notify VCONFKEY_LOCATION_NETWORK_ENABLED");
-		}
 	}
 #endif
 }
@@ -1132,13 +1116,11 @@ static void gps_update_position_cb(pos_data_t *pos, gps_error_t error, void *use
 	fields = (LBS_POSITION_EXT_FIELDS_LATITUDE | LBS_POSITION_EXT_FIELDS_LONGITUDE | LBS_POSITION_EXT_FIELDS_ALTITUDE | LBS_POSITION_EXT_FIELDS_SPEED | LBS_POSITION_EXT_FIELDS_DIRECTION);
 
 	accuracy = g_variant_new("(idd)", LBS_ACCURACY_LEVEL_DETAILED, pos->hor_accuracy, pos->ver_accuracy);
-	if (NULL == accuracy) {
+	if (NULL == accuracy)
 		LOG_GPS(DBG_LOW, "accuracy is NULL");
-	}
 
-	lbs_server_emit_position_changed(lbs_server->lbs_dbus_server, LBS_SERVER_METHOD_GPS,
-									 fields, pos->timestamp, pos->latitude, pos->longitude, pos->altitude,
-									 pos->speed, pos->bearing, 0.0, accuracy);
+	lbs_server_emit_position_changed(lbs_server->lbs_dbus_server, LBS_SERVER_METHOD_GPS, fields, pos->timestamp,
+									pos->latitude, pos->longitude, pos->altitude, pos->speed, pos->bearing, 0.0, accuracy);
 }
 
 static void gps_update_batch_cb(batch_data_t *batch, void *user_data)
@@ -1212,9 +1194,9 @@ static void gps_update_nmea_cb(nmea_data_t *nmea, void *user_data)
 	lbs_server->nmea.data[nmea->len] = '\0';
 	lbs_server->nmea.len = nmea->len;
 
-	if (lbs_server->nmea_used == FALSE) {
+	if (lbs_server->nmea_used == FALSE)
 		return;
-	}
+
 	LOG_GPS(DBG_LOW, "[%d] %s", lbs_server->nmea.timestamp, lbs_server->nmea.data);
 	lbs_server_emit_nmea_changed(lbs_server->lbs_dbus_server, lbs_server->nmea.timestamp, lbs_server->nmea.data);
 }
@@ -1296,9 +1278,9 @@ static void nps_get_last_position(lbs_server_s *lbs_server_nps)
 
 	setting_get_int(VCONFKEY_LOCATION_NV_LAST_WPS_TIMESTAMP, &timestamp);
 	str = setting_get_string(VCONFKEY_LOCATION_NV_LAST_WPS_LOCATION);
-	if (str == NULL) {
+	if (str == NULL)
 		return;
-	}
+
 	snprintf(location, sizeof(location), "%s", str);
 	free(str);
 
@@ -1307,26 +1289,26 @@ static void nps_get_last_position(lbs_server_s *lbs_server_nps)
 
 	while (last_location[index] != NULL) {
 		switch (index) {
-			case 0:
-				lbs_server_nps->last_pos.latitude = strtod(last_location[index], NULL);
-				break;
-			case 1:
-				lbs_server_nps->last_pos.longitude = strtod(last_location[index], NULL);
-				break;
-			case 2:
-				lbs_server_nps->last_pos.altitude = strtod(last_location[index], NULL);
-				break;
-			case 3:
-				lbs_server_nps->last_pos.speed = strtod(last_location[index], NULL);
-				break;
-			case 4:
-				lbs_server_nps->last_pos.direction = strtod(last_location[index], NULL);
-				break;
-			case 5:
-				lbs_server_nps->last_pos.hor_accuracy = strtod(last_location[index], NULL);
-				break;
-			default:
-				break;
+		case 0:
+			lbs_server_nps->last_pos.latitude = strtod(last_location[index], NULL);
+			break;
+		case 1:
+			lbs_server_nps->last_pos.longitude = strtod(last_location[index], NULL);
+			break;
+		case 2:
+			lbs_server_nps->last_pos.altitude = strtod(last_location[index], NULL);
+			break;
+		case 3:
+			lbs_server_nps->last_pos.speed = strtod(last_location[index], NULL);
+			break;
+		case 4:
+			lbs_server_nps->last_pos.direction = strtod(last_location[index], NULL);
+			break;
+		case 5:
+			lbs_server_nps->last_pos.hor_accuracy = strtod(last_location[index], NULL);
+			break;
+		default:
+			break;
 		}
 		if (++index == MAX_NPS_LOC_ITEM) break;
 		last_location[index] = (char *)strtok_r(NULL, ";", &last);
@@ -1359,7 +1341,7 @@ static void nps_init(lbs_server_s *lbs_server_nps)
 	lbs_server_nps->last_pos.speed = 0.0;
 	lbs_server_nps->last_pos.direction = 0.0;
 
-#if !GLIB_CHECK_VERSION (2, 31, 0)
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	GMutex *mutex_temp = g_mutex_new();
 	lbs_server_nps->mutex = *mutex_temp;
 	GCond *cond_temp = g_cond_new();
@@ -1404,7 +1386,7 @@ static void nps_deinit(lbs_server_s *lbs_server_nps)
 	lbs_server_nps->is_nps_running = FALSE;
 	lbs_server_nps->nps_client_count = 0;
 
-#if !GLIB_CHECK_VERSION (2, 31, 0)
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	g_cond_free(&lbs_server_nps->cond);
 	g_mutex_free(&lbs_server_nps->mutex);
 #endif
@@ -1431,13 +1413,12 @@ int main(int argc, char **argv)
 	cb.sv_cb = gps_update_satellite_cb;
 	cb.nmea_cb = gps_update_nmea_cb;
 
-#if !GLIB_CHECK_VERSION (2, 31, 0)
-	if (!g_thread_supported()) {
+#if !GLIB_CHECK_VERSION(2, 31, 0)
+	if (!g_thread_supported())
 		g_thread_init(NULL);
-	}
 #endif
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
+#if !GLIB_CHECK_VERSION(2, 35, 0)
 	g_type_init();
 #endif
 
@@ -1562,23 +1543,19 @@ int __copy_mock_location(lbs_server_s *lbs_server)
 	g_mock_position.fields = LBS_POSITION_EXT_FIELDS_NONE;
 	LOG_SEC("[%ld] lat = %lf, lng = %lf", lbs_server->mock_position.timestamp, lbs_server->mock_position.latitude, lbs_server->mock_position.longitude);
 
-	if (lbs_server->mock_position.latitude >= -90 && lbs_server->mock_position.latitude <= 90 ) {
+	if (lbs_server->mock_position.latitude >= -90 && lbs_server->mock_position.latitude <= 90)
 		lbs_server->mock_position.fields |= LBS_POSITION_EXT_FIELDS_LATITUDE;
-	}
 
-	if (lbs_server->mock_position.longitude >= -180 && lbs_server->mock_position.longitude <= 180 ) {
+	if (lbs_server->mock_position.longitude >= -180 && lbs_server->mock_position.longitude <= 180)
 		lbs_server->mock_position.fields |= LBS_POSITION_EXT_FIELDS_LONGITUDE;
-	}
 
 	lbs_server->mock_position.fields |= LBS_POSITION_EXT_FIELDS_ALTITUDE;
 
-	if (lbs_server->mock_position.speed >= 0) {
+	if (lbs_server->mock_position.speed >= 0)
 		lbs_server->mock_position.fields |= LBS_POSITION_EXT_FIELDS_SPEED;
-	}
 
-	if (lbs_server->mock_position.direction >= 0 && lbs_server->mock_position.direction <= 360) {
+	if (lbs_server->mock_position.direction >= 0 && lbs_server->mock_position.direction <= 360)
 		lbs_server->mock_position.fields |= LBS_POSITION_EXT_FIELDS_DIRECTION;
-	}
 
 	lbs_server->mock_accuracy = g_variant_ref_sink(g_variant_new("(idd)", LBS_ACCURACY_LEVEL_DETAILED, lbs_server->mock_position.hor_accuracy, -1));
 
@@ -1601,14 +1578,13 @@ static gboolean __mock_position_update_cb(gpointer userdata)
 		}
 	} else if (lbs_server->mock_status == LBS_STATUS_AVAILABLE) {
 		if (g_mock_position.timestamp) {
-			if (g_mock_position.fields & LBS_POSITION_EXT_FIELDS_DIRTY){
-				__copy_mock_location(lbs_server);		
-			}
-			
+			if (g_mock_position.fields & LBS_POSITION_EXT_FIELDS_DIRTY)
+				__copy_mock_location(lbs_server);
+
 			time_t timestamp;
 			time(&timestamp);
 
-			LOG_SEC("[%d] lat = %lf, lng = %lf", lbs_server->mock_position.timestamp, 
+			LOG_SEC("[%d] lat = %lf, lng = %lf", lbs_server->mock_position.timestamp,
 				lbs_server->mock_position.latitude, lbs_server->mock_position.longitude);
 
 			lbs_server->mock_position.timestamp = timestamp;
@@ -1626,7 +1602,6 @@ static gboolean __mock_position_update_cb(gpointer userdata)
 
 static gboolean mock_start_tracking(lbs_server_s *lbs_server)
 {
-
 	LOG_MOCK(DBG_LOW, "ENTER >>>");
 	if (!lbs_server) {
 		LOG_MOCK(DBG_ERR, "lbs_server is NULL!!");
@@ -1636,9 +1611,8 @@ static gboolean mock_start_tracking(lbs_server_s *lbs_server)
 	__copy_mock_location(lbs_server);
 	mock_set_status(lbs_server, LBS_STATUS_ACQUIRING);
 
-	if (!lbs_server->mock_timer) {
+	if (!lbs_server->mock_timer)
 		lbs_server->mock_timer = g_timeout_add_seconds(1, __mock_position_update_cb, lbs_server);
-	}
 
 	return TRUE;
 }
@@ -1655,7 +1629,7 @@ static int mock_stop_tracking(lbs_server_s *lbs_server)
 	lbs_server->mock_timer = 0;
 	g_variant_unref(lbs_server->mock_accuracy);
 
-	if (lbs_server->is_mock_running){
+	if (lbs_server->is_mock_running) {
 		g_mutex_lock(&lbs_server->mutex);
 		lbs_server->is_mock_running = FALSE;
 		g_mutex_unlock(&lbs_server->mutex);
@@ -1680,13 +1654,12 @@ static void mock_set_status(lbs_server_s *lbs_server, LbsStatus status)
 
 	lbs_server->mock_status = status;
 
-	if (lbs_server->mock_status == LBS_STATUS_AVAILABLE) {
+	if (lbs_server->mock_status == LBS_STATUS_AVAILABLE)
 		setting_set_int(VCONFKEY_LOCATION_MOCK_STATE, POSITION_CONNECTED);
-	} else if (lbs_server->mock_status == LBS_STATUS_ACQUIRING) {
+	else if (lbs_server->mock_status == LBS_STATUS_ACQUIRING)
 		setting_set_int(VCONFKEY_LOCATION_MOCK_STATE, POSITION_SEARCHING);
-	} else {
+	else
 		setting_set_int(VCONFKEY_LOCATION_MOCK_STATE, POSITION_OFF);
-	}
 
 	lbs_server_emit_status_changed(lbs_server->lbs_dbus_server, LBS_SERVER_METHOD_MOCK, status);
 }
@@ -1716,8 +1689,8 @@ static void __setting_mock_cb(keynode_t *key, gpointer user_data)
 
 	if (onoff == 0) {
 		ret = mock_remove_all_clients(lbs_server);
-		if (ret == FALSE) {
+
+		if (ret == FALSE)
 			LOG_MOCK(DBG_LOW, "already removed.");
-		}
 	}
 }
