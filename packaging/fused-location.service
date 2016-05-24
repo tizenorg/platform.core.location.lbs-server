@@ -1,0 +1,11 @@
+[Unit]
+Description=Fused Location daemon
+
+[Service]
+ExecStart=/usr/bin/fused-location
+MemoryLimit=10M
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target
