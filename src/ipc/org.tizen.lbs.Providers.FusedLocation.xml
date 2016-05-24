@@ -1,0 +1,69 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+    "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node name="/org/tizen/lbs/Providers/FusedLocation">
+    <interface name="org.tizen.lbs.Providers.FusedLocation.Server">
+        <method name="echo">
+            <arg name="message" direction="in" type="s">
+                <doc:doc><doc:summary>Message text</doc:summary></doc:doc>
+            </arg>
+            <arg name="answer" direction="out" type="s">
+                <doc:doc><doc:summary>Answer message text</doc:summary></doc:doc>
+            </arg>
+            <doc:doc>
+                <doc:description>
+                    <doc:para>
+                        Sample echo method.
+                    </doc:para>
+                </doc:description>
+            </doc:doc>
+        </method>
+        <method name="registerClient">
+            <doc:doc>
+                <doc:description>
+                    <doc:para>
+                        Register the client to the service.
+                    </doc:para>
+                </doc:description>
+            </doc:doc>
+        </method>
+        <method name="setAccuracy">
+            <arg name="level" direction="in" type="u">
+                <doc:doc><doc:summary>Accuracy level</doc:summary></doc:doc>
+            </arg>
+            <doc:doc>
+                <doc:description>
+                    <doc:para>
+                        Set desired accuracy.
+                    </doc:para>
+                </doc:description>
+            </doc:doc>
+        </method>
+        <method name="setDesiredInterval">
+            <arg name="interval" direction="in" type="u">
+                <doc:doc><doc:summary>Desired interval of the updates</doc:summary></doc:doc>
+            </arg>
+            <doc:doc>
+                <doc:description>
+                    <doc:para>
+                        Set desired update intervals.
+                    </doc:para>
+                </doc:description>
+            </doc:doc>
+        </method>
+        <method name="subscribe">
+            <arg name="interval" direction="in" type="u">
+                <doc:doc><doc:summary>Minimal interval of the updates</doc:summary></doc:doc>
+            </arg>
+            <arg name="fd" direction="out" type="h">
+                <doc:doc><doc:summary>File descriptor receiving updates</doc:summary></doc:doc>
+            </arg>
+            <doc:doc>
+                <doc:description>
+                    <doc:para>
+                        Returns a file descriptor for receiving position updates.
+                    </doc:para>
+                </doc:description>
+            </doc:doc>
+        </method>
+    </interface>
+</node>
