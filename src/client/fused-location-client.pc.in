@@ -1,0 +1,12 @@
+# Package Information for pkg-config
+
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=@LIB_INSTALL_DIR@
+includedir=${prefix}/include
+
+Name: fused-location-client
+Description: Fused Location client library
+Version: @_LIB_VERSION_@
+Libs: -L${libdir}/@PROJECT_NAME@ -l@CURRENT_TARGET@
+Cflags: -I${includedir}/@PROJECT_NAME@
