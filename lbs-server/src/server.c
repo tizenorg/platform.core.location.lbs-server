@@ -201,20 +201,20 @@ static void _gps_server_set_gps_state(int gps_state)
 
 	switch (gps_state) {
 	case POSITION_CONNECTED:
-			ret = setting_set_int(VCONFKEY_LOCATION_GPS_STATE, POSITION_CONNECTED);
-			gps_dump_log("GPS state : POSITION_CONNECTED", NULL);
-			break;
+		ret = setting_set_int(VCONFKEY_LOCATION_GPS_STATE, POSITION_CONNECTED);
+		gps_dump_log("GPS state : POSITION_CONNECTED", NULL);
+		break;
 	case POSITION_SEARCHING:
-			ret = setting_set_int(VCONFKEY_LOCATION_GPS_STATE, POSITION_SEARCHING);
-			gps_dump_log("GPS state : POSITION_SEARCHING", NULL);
-			break;
+		ret = setting_set_int(VCONFKEY_LOCATION_GPS_STATE, POSITION_SEARCHING);
+		gps_dump_log("GPS state : POSITION_SEARCHING", NULL);
+		break;
 	case POSITION_OFF:
-			ret = setting_set_int(VCONFKEY_LOCATION_GPS_STATE, POSITION_OFF);
-			gps_dump_log("GPS state : POSITION_OFF", NULL);
-			break;
+		ret = setting_set_int(VCONFKEY_LOCATION_GPS_STATE, POSITION_OFF);
+		gps_dump_log("GPS state : POSITION_OFF", NULL);
+		break;
 	default:
-			ret = setting_set_int(VCONFKEY_LOCATION_GPS_STATE, POSITION_OFF);
-			break;
+		ret = setting_set_int(VCONFKEY_LOCATION_GPS_STATE, POSITION_OFF);
+		break;
 	}
 
 	if (ret == TRUE)

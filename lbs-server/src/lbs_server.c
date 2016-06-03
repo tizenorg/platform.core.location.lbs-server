@@ -300,8 +300,7 @@ static void __nps_callback(void *arg, const Plugin_LocationInfo *location, const
 
 	if (!location) {
 		LOG_NPS(DBG_LOW, "NULL is returned from plugin...");
-		/* sometimes plugin returns NULL even if it is connected... */
-		/*nps_set_status (lbs_server , LBS_STATUS_ACQUIRING); */
+		nps_set_status (lbs_server , LBS_STATUS_ACQUIRING);
 		return;
 	}
 
