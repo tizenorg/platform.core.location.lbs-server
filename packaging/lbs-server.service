@@ -8,6 +8,8 @@ ExecStart=/usr/bin/lbs-server
 MemoryLimit=10M
 User=root
 Group=root
+CapabilityBoundingSet=~CAP_MAC_ADMIN
+CapabilityBoundingSet=~CAP_MAC_OVERRIDE
 
 [Install]
 WantedBy=multi-user.target
