@@ -1,5 +1,6 @@
 [D-BUS Service]
 Name=org.tizen.lbs.Providers.LbsServer
-Exec=@BIN_DIR@/lbs-server
+Exec=/bin/false
 User=root
 Group=root
+SystemdService=lbs-server.service
