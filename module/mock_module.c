@@ -34,7 +34,6 @@
 
 #include "log.h"
 
-#define MAX_GPS_LOC_ITEM	7
 #define MOCK_LOCATION_CLEAR_VALUE 999
 
 typedef struct {
@@ -59,7 +58,7 @@ typedef enum {
 	LBS_STATUS_MOCK_FAIL,
 } LbsStatus;
 
-static void __status_callback(GVariant *param, void *user_data)
+static void status_callback(GVariant *param, void *user_data)
 {
 	ModMockData *mod_mock = (ModMockData *) user_data;
 	g_return_if_fail(param);
@@ -67,15 +66,14 @@ static void __status_callback(GVariant *param, void *user_data)
 	g_return_if_fail(mod_mock->status_cb);
 
 	int status = 0, method = 0;
-
 	g_variant_get(param, "(ii)", &method, &status);
-
 	MOD_MOCK_LOGD("method(%d) status(%d)", method, status);
 
-	if (method != LBS_CLIENT_METHOD_MOCK) return;
+	if (method != LBS_CLIENT_METHOD_MOCK)
+		return;
 
 	if (status == LBS_STATUS_AVAILABLE) {
-		MOD_MOCK_LOGD("LBS_STATUS_AVAILABLE");
+		MOD_MOCK_LOGD("LBS_STATUS_AVAILABLE : mock_module");
 		mod_mock->status_cb(TRUE, LOCATION_STATUS_3D_FIX, mod_mock->userdata);
 	} else {
 		MOD_LOGD("LBS_STATUS_ACQUIRING/ERROR/UNAVAILABLE. Status[%d]", status);
@@ -83,7 +81,7 @@ static void __status_callback(GVariant *param, void *user_data)
 	}
 }
 
-static void __position_callback(GVariant *param, void *user_data)
+static void position_callback(GVariant *param, void *user_data)
 {
 	ModMockData *mod_mock = (ModMockData *)user_data;
 	g_return_if_fail(mod_mock);
@@ -95,9 +93,11 @@ static void __position_callback(GVariant *param, void *user_data)
 
 	g_variant_get(param, "(iiidddddd@(idd))", &method, &fields, &timestamp, &latitude, &longitude, &altitude, &speed, &direction, &climb, &accuracy);
 
-	MOD_MOCK_LOGD("method: %d", method);
-	if (method != LBS_CLIENT_METHOD_MOCK)
+	MOD_MOCK_LOGD("position_callback [method: %d, field: %d]", method, fields);
+	if (method != LBS_CLIENT_METHOD_MOCK) {
+		MOD_LOGD("Method is not LBS_CLIENT_METHOD_MOCK: %d", method);
 		return;
+	}
 
 	g_variant_get(accuracy, "(idd)", &level, &horizontal, &vertical);
 
@@ -106,12 +106,11 @@ static void __position_callback(GVariant *param, void *user_data)
 	LocationAccuracy *acc = NULL;
 
 	pos = location_position_new(timestamp, latitude, longitude, altitude, LOCATION_STATUS_3D_FIX);
-
 	vel = location_velocity_new(timestamp, speed, direction, climb);
-
 	acc = location_accuracy_new(LOCATION_ACCURACY_LEVEL_DETAILED, horizontal, vertical);
 
 	mod_mock->pos_cb(TRUE, pos, vel, acc, mod_mock->userdata);
+
 	mod_mock->last_pos = location_position_copy(pos);
 	mod_mock->last_vel = location_velocity_copy(vel);
 	mod_mock->last_acc = location_accuracy_copy(acc);
@@ -122,17 +121,16 @@ static void __position_callback(GVariant *param, void *user_data)
 	g_variant_unref(accuracy);
 }
 
-static void __on_signal_callback(const gchar *sig, GVariant *param, gpointer user_data)
+static void on_signal_callback(const gchar *sig, GVariant *param, gpointer user_data)
 {
 	if (!g_strcmp0(sig, "PositionChanged"))
-		__position_callback(param, user_data);
+		position_callback(param, user_data);
 	else if (!g_strcmp0(sig, "StatusChanged"))
-		__status_callback(param, user_data);
+		status_callback(param, user_data);
 	else
 		MOD_MOCK_LOGD("Invaild signal[%s]", sig);
 }
 
-/*static int start(gpointer handle, guint pos_update_interval, LocModStatusCB status_cb, LocModPositionExtCB pos_cb, gpointer userdata)*/
 static int start(gpointer handle, LocModStatusCB status_cb, LocModPositionExtCB pos_cb, gpointer userdata)
 {
 	MOD_MOCK_LOGD("ENTER >>>");
@@ -155,7 +153,7 @@ static int start(gpointer handle, LocModStatusCB status_cb, LocModPositionExtCB 
 	}
 	MOD_MOCK_LOGD("mod_mock(%p) pos_cb(%p) user_data(%p)", mod_mock, mod_mock->pos_cb, mod_mock->userdata);
 
-	ret = lbs_client_start(mod_mock->lbs_client, 1, LBS_CLIENT_LOCATION_CB | LBS_CLIENT_LOCATION_STATUS_CB, __on_signal_callback, mod_mock);
+	ret = lbs_client_start(mod_mock->lbs_client, 1, LBS_CLIENT_LOCATION_CB | LBS_CLIENT_LOCATION_STATUS_CB, on_signal_callback, mod_mock);
 	if (ret != LBS_CLIENT_ERROR_NONE) {
 		if (ret == LBS_CLIENT_ERROR_ACCESS_DENIED) {
 			MOD_MOCK_LOGE("Access denied[%d]", ret);
@@ -274,7 +272,7 @@ static int set_position_update_interval(gpointer handle, guint interval)
 
 /* Tizen 3.0 Mock Location */
 
-static void __on_set_mock_location_callback(const gchar *sig, GVariant *param, gpointer userdata)
+static void on_set_mock_location_callback(const gchar *sig, GVariant *param, gpointer userdata)
 {
 	ModMockData *mod_mock = (ModMockData *) userdata;
 	g_return_if_fail(param);
@@ -284,12 +282,11 @@ static void __on_set_mock_location_callback(const gchar *sig, GVariant *param, g
 	MOD_MOCK_LOGD("ENTER >>>");
 
 	int method = 0, status = 0;
-
 	g_variant_get(param, "(ii)", &method, &status);
-	MOD_MOCK_LOGD("method(%d) status(%d)", method, status);
+	MOD_MOCK_LOGD("mock_module: method(%d) status(%d)", method, status);
 
 	if (method != LBS_CLIENT_METHOD_MOCK) {
-		MOD_MOCK_LOGI("Invaild method(%d)", method);
+		MOD_MOCK_LOGI("mock_module Invalid(%d)", method);
 		return;
 	}
 
@@ -304,10 +301,10 @@ static void __on_set_mock_location_callback(const gchar *sig, GVariant *param, g
 	return;
 }
 
-static int set_mock_location(gpointer handle, LocationPosition *position, LocationVelocity *velocity, LocationAccuracy *accuracy,
-	LocModStatusCB mock_status_cb, gpointer userdata)
+static int set_mock_location(gpointer handle, LocationPosition *position, LocationVelocity *velocity,
+							LocationAccuracy *accuracy, LocModStatusCB mock_status_cb, gpointer userdata)
 {
-	MOD_MOCK_LOGD("ENTER >>>");
+	MOD_MOCK_LOGD("ENTER >>> set_mock_location");
 	ModMockData *mod_mock = (ModMockData *) handle;
 	g_return_val_if_fail(mod_mock, LOCATION_ERROR_NOT_AVAILABLE);
 	g_return_val_if_fail(mock_status_cb, LOCATION_ERROR_NOT_AVAILABLE);
@@ -327,8 +324,7 @@ static int set_mock_location(gpointer handle, LocationPosition *position, Locati
 	mod_mock->userdata = userdata;
 
 	ret = lbs_client_set_mock_location_async(mod_mock->lbs_client, LBS_CLIENT_METHOD_MOCK, position->latitude, position->longitude, position->altitude,
-		velocity->speed, velocity->direction, accuracy->horizontal_accuracy,
-		__on_set_mock_location_callback, mod_mock);
+		velocity->speed, velocity->direction, accuracy->horizontal_accuracy, on_set_mock_location_callback, mod_mock);
 
 	if (ret != LBS_CLIENT_ERROR_NONE) {
 		if (ret == LBS_CLIENT_ERROR_ACCESS_DENIED) {
@@ -366,8 +362,8 @@ static int clear_mock_location(gpointer handle,	LocModStatusCB mock_status_cb, g
 	mod_mock->mock_status_cb = mock_status_cb;
 	mod_mock->userdata = userdata;
 
-	ret = lbs_client_set_mock_location_async(mod_mock->lbs_client, LBS_CLIENT_METHOD_MOCK, MOCK_LOCATION_CLEAR_VALUE, 0, 0,
-		0, 0, 0, __on_set_mock_location_callback, mod_mock);
+	ret = lbs_client_set_mock_location_async(mod_mock->lbs_client, LBS_CLIENT_METHOD_MOCK,
+											MOCK_LOCATION_CLEAR_VALUE, 0, 0, 0, 0, 0, on_set_mock_location_callback, mod_mock);
 
 	if (ret != LBS_CLIENT_ERROR_NONE) {
 		if (ret == LBS_CLIENT_ERROR_ACCESS_DENIED) {
@@ -423,9 +419,7 @@ LOCATION_MODULE_API void shutdown(gpointer handle)
 
 	mod_mock->status_cb = NULL;
 	mod_mock->pos_cb = NULL;
-	/*
-	mod_mock->batch_cb = NULL;
-	*/
+
 	if (mod_mock->last_pos) location_position_free(mod_mock->last_pos);
 	if (mod_mock->last_vel) location_velocity_free(mod_mock->last_vel);
 	if (mod_mock->last_acc) location_accuracy_free(mod_mock->last_acc);
