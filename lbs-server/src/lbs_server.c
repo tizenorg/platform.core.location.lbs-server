@@ -462,6 +462,7 @@ static void stop_batch_tracking(lbs_server_s *lbs_server)
 
 static void start_tracking(lbs_server_s *lbs_server, lbs_server_method_e method)
 {
+	LOG_GPS(DBG_LOW, ">>> start_tracking");
 	int ret = 0;
 
 	switch (method) {
@@ -1149,8 +1150,8 @@ static void gps_update_satellite_cb(sv_data_t *sv, void *user_data)
 	int timestamp = 0;
 	int satellite_used = 0;
 	GVariant *used_prn = NULL;
-	GVariantBuilder *used_prn_builder = NULL;
 	GVariant *satellite_info = NULL;
+	GVariantBuilder *used_prn_builder = NULL;
 	GVariantBuilder *satellite_info_builder = NULL;
 
 	memcpy(&lbs_server->satellite, sv, sizeof(sv_data_t));
@@ -1406,7 +1407,7 @@ int main(int argc, char **argv)
 {
 	lbs_server_s *lbs_server = NULL;
 	struct gps_callbacks cb;
-	int ret_code = 0;
+	int ret = 0;
 	cb.pos_cb = gps_update_position_cb;
 	cb.batch_cb = gps_update_batch_cb;
 	cb.sv_cb = gps_update_satellite_cb;
@@ -1421,8 +1422,8 @@ int main(int argc, char **argv)
 	g_type_init();
 #endif
 
-	ret_code = initialize_server(argc, argv);
-	if (ret_code != 0) {
+	ret = initialize_server(argc, argv);
+	if (ret != 0) {
 		LOG_GPS(DBG_ERR, "initialize_server failed");
 		return 1;
 	}
@@ -1458,9 +1459,10 @@ int main(int argc, char **argv)
 
 	lbs_dbus_callback->set_mock_location_cb = set_mock_location_cb;
 
-	ret_code = lbs_server_create(SERVICE_NAME, SERVICE_PATH, "lbs-server", "lbs-server",
+	ret = lbs_server_create(SERVICE_NAME, SERVICE_PATH, "lbs-server", "lbs-server",
 								&(lbs_server->lbs_dbus_server), lbs_dbus_callback, (gpointer)lbs_server);
-	if (ret_code != LBS_SERVER_ERROR_NONE) {
+
+	if (ret != LBS_SERVER_ERROR_NONE) {
 		LOG_GPS(DBG_ERR, "lbs_server_create failed");
 		return 1;
 	}

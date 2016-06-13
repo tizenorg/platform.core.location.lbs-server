@@ -156,9 +156,11 @@ static void position_callback(GVariant *param, void *user_data)
 
 	g_variant_get(param, "(iiidddddd@(idd))", &method, &fields, &timestamp, &latitude, &longitude, &altitude, &speed, &direction, &climb, &accuracy);
 
-	MOD_LOGD("method: %d", method);
-	if (method != LBS_CLIENT_METHOD_GPS)
+	MOD_MOCK_LOGD("position_callback [method: %d, field: %d]", method, fields);
+	if (method != LBS_CLIENT_METHOD_GPS) {
+		MOD_LOGD("Method is not LBS_CLIENT_METHOD_GPS: %d", method);
 		return;
+	}
 
 	g_variant_get(accuracy, "(idd)", &level, &horizontal, &vertical);
 
@@ -232,7 +234,7 @@ static int start_batch(gpointer handle, LocModBatchExtCB batch_cb, guint batch_i
 	}
 	MOD_LOGD("gps-manger(%p) batch_cb(%p) user_data(%p)", mod_gps, mod_gps->batch_cb, mod_gps->userdata);
 
-	ret = lbs_client_start_batch(mod_gps->lbs_client, LBS_CLIENT_BATCH_CB, on_signal_batch_callback, batch_interval, batch_period, mod_gps);
+	ret = lbs_client_batch_start(mod_gps->lbs_client, LBS_CLIENT_BATCH_CB, on_signal_batch_callback, batch_interval, batch_period, mod_gps);
 	if (ret != LBS_CLIENT_ERROR_NONE) {
 		if (ret == LBS_CLIENT_ERROR_ACCESS_DENIED) {
 			MOD_LOGE("Access denied[%d]", ret);
@@ -293,7 +295,7 @@ static int stop_batch(gpointer handle)
 
 	int ret = LBS_CLIENT_ERROR_NONE;
 
-	ret = lbs_client_stop_batch(mod_gps->lbs_client);
+	ret = lbs_client_batch_stop(mod_gps->lbs_client);
 	if (ret != LBS_CLIENT_ERROR_NONE) {
 		MOD_LOGE("Fail to stop batch. Error[%d]", ret);
 		lbs_client_destroy(mod_gps->lbs_client);
