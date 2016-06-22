@@ -39,10 +39,10 @@ extern "C" {
 #define DBG_WARN	LOG_WARN
 #define DBG_ERR		LOG_ERROR
 
-#define LOG_GPS(dbg_lvl,fmt,args...)  SLOG(dbg_lvl, TAG_GPS_MANAGER, fmt, ##args)
-#define LOG_NPS(dbg_lvl,fmt,args...)  SLOG(dbg_lvl, TAG_NPS_MANAGER, fmt,##args)
-#define LOG_MOCK(dbg_lvl,fmt,args...)  SLOG(dbg_lvl, TAG_MOCK_MANAGER, fmt,##args)
-#define LOG_SEC(fmt,args...)	SECURE_SLOG(LOG_DEBUG, TAG_MOCK_MANAGER, fmt, ##args)
+#define LOG_GPS(dbg_lvl, fmt, args...)	SLOG(dbg_lvl, TAG_GPS_MANAGER, fmt, ##args)
+#define LOG_NPS(dbg_lvl, fmt, args...)	SLOG(dbg_lvl, TAG_NPS_MANAGER, fmt, ##args)
+#define LOG_MOCK(dbg_lvl, fmt, args...)	SLOG(dbg_lvl, TAG_MOCK_MANAGER, fmt, ##args)
+#define LOG_SEC(fmt, args...)			SECURE_SLOG(LOG_DEBUG, TAG_MOCK_MANAGER, fmt, ##args)
 
 #define FUNC_ENTRANCE_SERVER		LOG_GPS(DBG_LOW, "[%s] Entered!!", __func__);
 

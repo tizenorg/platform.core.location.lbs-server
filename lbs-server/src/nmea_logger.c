@@ -79,11 +79,10 @@ void start_nmea_log()
 
 	raw_nmea_fd = open(filepath, O_RDWR | O_APPEND | O_CREAT, 0644);
 
-	if (raw_nmea_fd < 0) {
+	if (raw_nmea_fd < 0)
 		LOG_GPS(DBG_ERR, "FAILED to open nmea_data file, error[%d]", errno);
-	} else {
+	else
 		LOG_GPS(DBG_LOW, "Success :: raw_nmea_fd [%d]", raw_nmea_fd);
-	}
 
 	return;
 }
@@ -96,9 +95,9 @@ void stop_nmea_log()
 
 	if (raw_nmea_fd != -1) {
 		close_ret_val = close(raw_nmea_fd);
-		if (close_ret_val < 0) {
+		if (close_ret_val < 0)
 			LOG_GPS(DBG_ERR, "FAILED to close raw_nmea_fd[%d], error[%d]", raw_nmea_fd, errno);
-		}
+
 		raw_nmea_fd = -1;
 	}
 	return;

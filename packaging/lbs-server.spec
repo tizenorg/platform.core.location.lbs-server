@@ -1,6 +1,6 @@
 Name:    lbs-server
 Summary: LBS Server for Tizen
-Version: 1.0.1
+Version: 1.0.3
 Release: 1
 Group:   Location/Service
 License: Apache-2.0
@@ -95,13 +95,6 @@ rm -rf %{buildroot}
 
 %post
 
-%ifarch %{arm} aarch64
-	buxton2ctl -i -d set-int32 system db/location/replay/ReplayEnabled 0
-	buxton2ctl -i -d set-int32 system db/location/replay/ReplayMode 1
-%else
-	buxton2ctl -i -d set-int32 system db/location/replay/ReplayEnabled 1
-	buxton2ctl -i -d set-int32 system db/location/replay/ReplayMode 0
-%endif
 
 %post -n location-lbs-server
 #%ifnarch %arm
