@@ -1,12 +1,18 @@
+[Version]	lbs-server_1.0.4
+[Date]		30 Jun 2016
+[Changes]	Change to non-root daemon.
+[Developer]	Kyoungjun Sung <kj7.sung@samsung.com>
+
+================================================================================
 [Version]	lbs-server_1.0.3
 [Date]		9 Jun 2016
-[Problem]	Smack capability removed.
+[Changes]	Smack capability removed.
 [Developer]	Kyoungjun Sung <kj7.sung@samsung.com>
 
 ================================================================================
 [Version]	lbs-server_1.0.2
 [Date]		3 Jun 2016
-[Problem]	Change service state behavior when WPS searching mode.
+[Changes]	Change service state behavior when WPS searching mode.
 [Developer]	Kyoungjun Sung <kj7.sung@samsung.com>
 
 ================================================================================
