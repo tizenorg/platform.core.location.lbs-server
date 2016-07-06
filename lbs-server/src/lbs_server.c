@@ -1106,6 +1106,11 @@ static void gps_update_position_cb(pos_data_t *pos, gps_error_t error, void *use
 
 	lbs_server_s *lbs_server = (lbs_server_s *)(user_data);
 
+	if (lbs_server->is_mock_running) {
+		LOG_GPS(DBG_LOW, "Ignored the real GPS since mock running");
+		return;
+	}
+
 	memcpy(&lbs_server->position, pos, sizeof(pos_data_t));
 
 	if (lbs_server->status != LBS_STATUS_AVAILABLE) {
@@ -1589,10 +1594,17 @@ static gboolean __mock_position_update_cb(gpointer userdata)
 				lbs_server->mock_position.latitude, lbs_server->mock_position.longitude);
 
 			lbs_server->mock_position.timestamp = timestamp;
+#ifndef HYBRID_MOCK_LOCATION
+			lbs_server_emit_position_changed(lbs_server->lbs_dbus_server, LBS_SERVER_METHOD_GPS,
+											lbs_server->mock_position.fields, lbs_server->mock_position.timestamp,
+											lbs_server->mock_position.latitude,	lbs_server->mock_position.longitude, lbs_server->mock_position.altitude,
+											lbs_server->mock_position.speed, lbs_server->mock_position.direction, 0.0, lbs_server->mock_accuracy);
+#else
 			lbs_server_emit_position_changed(lbs_server->lbs_dbus_server, LBS_SERVER_METHOD_MOCK,
 											lbs_server->mock_position.fields, lbs_server->mock_position.timestamp,
 											lbs_server->mock_position.latitude,	lbs_server->mock_position.longitude, lbs_server->mock_position.altitude,
 											lbs_server->mock_position.speed, lbs_server->mock_position.direction, 0.0, lbs_server->mock_accuracy);
+#endif
 		} else {
 			mock_set_status(lbs_server, LBS_STATUS_ACQUIRING);
 		}
