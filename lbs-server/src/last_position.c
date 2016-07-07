@@ -50,7 +50,7 @@ void gps_set_position(const pos_data_t *pos)
 	if (pos == NULL)
 		return;
 
-	LOG_GPS(DBG_LOW, "set_position[%d]", pos->timestamp);
+	//LOG_GPS(DBG_LOW, "set_position[%d]", pos->timestamp);
 	int last_timestamp = 0;
 	int timestamp = pos->timestamp;
 	double lat = pos->latitude;

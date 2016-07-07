@@ -1099,7 +1099,7 @@ static void shutdown(gpointer userdata, gboolean *shutdown_arr)
 
 static void gps_update_position_cb(pos_data_t *pos, gps_error_t error, void *user_data)
 {
-	LOG_GPS(DBG_LOW, "ENTER >>>");
+	//LOG_GPS(DBG_LOW, "ENTER >>>");
 
 	GVariant *accuracy = NULL;
 	LbsPositionExtFields fields;
