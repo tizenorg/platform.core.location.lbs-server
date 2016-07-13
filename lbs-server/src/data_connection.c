@@ -292,7 +292,8 @@ unsigned int query_dns(char *pdns_lookup_addr, unsigned int *ipaddr, int *port)
 		pdns_lookup_addr = ptr;
 
 		ptr = (char *)strtok_r(NULL, ":", &last);
-		*port = atoi(ptr);
+		if (ptr)
+			*port = atoi(ptr);
 	}
 
 	tmpbuf = malloc(tmplen);
