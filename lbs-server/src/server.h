@@ -70,12 +70,8 @@ int initialize_server(int argc, char **argv);
 int deinitialize_server();
 
 int request_change_pos_update_interval_standalone_gps(unsigned int interval);
-
-#ifndef TIZEN_DEVICE
 int request_start_batch_session(int batch_interval, int batch_period);
-int request_stop_batch_session(int batch_interval, int batch_period, int session_status);
-#endif
-
+int request_stop_batch_session(void);
 int request_start_session(int interval);
 int request_stop_session(void);
 #ifndef _TIZEN_PUBLIC_
