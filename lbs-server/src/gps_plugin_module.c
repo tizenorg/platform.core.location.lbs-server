@@ -50,7 +50,8 @@ int load_plugin_module(char *specific_name, void **plugin_handle)
 
 		if (stat(plugin_path, &st) != 0) {
 			strncpy(plugin_path, GPS_PLUGIN_PATH, sizeof(plugin_path));
-			/* To support real GPS when additional plugin is added*/
+
+			/* Comment out to support real GPS when GPS plugin is installed*/
 			/* setting_set_int(VCONFKEY_LOCATION_REPLAY_ENABLED, 1); */
 		}
 	}

@@ -394,7 +394,8 @@ typedef struct {
 
 typedef struct {
 	int interval;
-	int period;
+	int period;				/**< Emulator */
+	int session_status;		/**< Emulator */
 } gps_action_start_data_t;
 
 typedef struct {
