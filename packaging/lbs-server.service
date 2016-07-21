@@ -4,6 +4,7 @@ Description=lbs server daemon
 [Service]
 #Type=forking
 #ExecStart=/etc/rc.d/rc5.d/S90lbs-server
+SmackProcessLabel=System
 ExecStart=/usr/bin/lbs-server
 MemoryLimit=10M
 User=location
