@@ -306,7 +306,6 @@ int request_stop_session()
 	return status;
 }
 
-#ifndef TIZEN_DEVICE
 int request_start_batch_session(int batch_interval, int batch_period)
 {
 	LOG_GPS(DBG_INFO, "Batch: GPS start with interval[%d]", batch_interval);
@@ -316,10 +315,10 @@ int request_start_batch_session(int batch_interval, int batch_period)
 	gps_server_t *server = g_gps_server;
 	gps_action_start_data_t gps_start_data;
 
-	if (server->session_state == GPS_SESSION_STARTING || server->session_state == GPS_SESSION_STARTED)
-		gps_start_data.session_status = 1;	/* 1:Already running, 0:need to start*/
-	else
-		gps_start_data.session_status = 0;
+	if (server->session_state != GPS_SESSION_STOPPED && server->session_state != GPS_SESSION_STOPPING) {
+		LOG_GPS(DBG_WARN, "Batch: GPS Session Already Started!");
+		return TRUE;
+	}
 
 	server->session_state = GPS_SESSION_STARTING;
 	LOG_GPS(DBG_LOW, "==GPSSessionState[%d]", server->session_state);
@@ -339,22 +338,17 @@ int request_start_batch_session(int batch_interval, int batch_period)
 	return TRUE;
 }
 
-int request_stop_batch_session(int batch_interval, int batch_period, int session_status)
+int request_stop_batch_session()
 {
 	gboolean status = TRUE;
 	gboolean cur_replay_enabled = FALSE;
 	gps_failure_reason_t reason_code = GPS_FAILURE_CAUSE_NORMAL;
 	gps_server_t *server = g_gps_server;
-	gps_action_start_data_t gps_start_data;
-	gps_start_data.interval = batch_interval;
-	gps_start_data.period = batch_period;
-	gps_start_data.session_status = session_status;		/* 0:need to stop, 1:keep status */
 
 	LOG_GPS(DBG_LOW, "Batch: Stop GPS Session, ==GPSSessionState[%d]", server->session_state);
 	if (server->session_state == GPS_SESSION_STARTED || server->session_state == GPS_SESSION_STARTING) {
-		/* TURE: All clients stopped, FALSE: Some clients are running with GPS or BATCH */
-		status = get_plugin_module()->request(GPS_ACTION_STOP_BATCH, &gps_start_data, &reason_code);
-		if (status == TRUE && session_status == 0) {
+		status = get_plugin_module()->request(GPS_ACTION_STOP_BATCH, NULL, &reason_code);
+		if (status) {
 			server->session_state = GPS_SESSION_STOPPING;
 			LOG_GPS(DBG_LOW, "==GPSSessionState[%d]", server->session_state);
 			cur_replay_enabled = get_replay_enabled();
@@ -364,15 +358,14 @@ int request_stop_batch_session(int batch_interval, int batch_period, int session
 			}
 			setting_notify_key_changed(VCONFKEY_LOCATION_REPLAY_ENABLED, _gps_replay_changed_cb, (void *)server);
 		} else {
-			LOG_GPS(DBG_ERR, "  Client exists. plugin->request to LBS_GPS_STOP_SESSION passed");
-			status = FALSE;
+			LOG_GPS(DBG_ERR, "plugin->request to LBS_GPS_STOP_SESSION Failed, reasonCode =%d", reason_code);
 		}
 	} else {
-		LOG_GPS(DBG_LOW, " Keep the client status because the GPS state is not started");
+		/* If request is not sent, keep the client registed */
+		LOG_GPS(DBG_LOW, " LBS_GPS_STOP_SESSION is not sent because the GPS state is not started, keep the client registed ");
 	}
 	return status;
 }
-#endif
 
 int request_add_geofence(int fence_id, double latitude, double longitude, int radius, int last_state, int monitor_states, int notification_responsiveness, int unknown_timer)
 {
@@ -389,8 +382,8 @@ int request_add_geofence(int fence_id, double latitude, double longitude, int ra
 	/* Default value : temp */
 	action_data.notification_responsiveness_ms = 5000;
 	action_data.unknown_timer_ms = 30000;
-	/* action_data.notification_responsiveness_ms = notification_responsiveness; */
-	/* action_data.unknown_timer_ms = unknown_timer; */
+	/*action_data.notification_responsiveness_ms = notification_responsiveness; */
+	/*action_data.unknown_timer_ms = unknown_timer; */
 
 	LOG_GPS(DBG_LOW, "request_add_geofence with geofence_id [%d]", fence_id);
 	status = get_plugin_module()->request(GPS_ACTION_ADD_GEOFENCE, &action_data, &reason_code);
@@ -1093,14 +1086,14 @@ void check_plugin_module(char *module_name)
 	} else if (access(CSR_PATH, F_OK) == 0) {
 		g_strlcpy(module_name, "csr", strlen("csr") + 1);
 	} else if (access(QCOM8x30_PATH, F_OK) == 0 || access(QCOM9x15_PATH, F_OK) == 0 ||
-		access(QCOM8974_PATH, F_OK) == 0 || access(QCOM8210_PATH, F_OK) == 0 ||
-		access(QCOM8226_PATH, F_OK) == 0 || access(QCOM8916_PATH, F_OK) == 0) {
+				access(QCOM8974_PATH, F_OK) == 0 || access(QCOM8210_PATH, F_OK) == 0 ||
+				access(QCOM8226_PATH, F_OK) == 0 || access(QCOM8916_PATH, F_OK) == 0) {
 		g_strlcpy(module_name, "qcom", strlen("qcom") + 1);
 	} else {
 		g_strlcpy(module_name, "replay", strlen("replay") + 1);
 	}
 
-	LOG_GPS(DBG_LOW, ">> module name : %s", module_name);
+	LOG_GPS(DBG_LOW, "module name : %s", module_name);
 }
 
 static gps_server_t *_initialize_gps_data(void)

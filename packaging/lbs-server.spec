@@ -1,6 +1,6 @@
 Name:    lbs-server
 Summary: LBS Server for Tizen
-Version: 1.0.5
+Version: 1.0.4
 Release: 1
 Group:   Location/Service
 License: Apache-2.0
@@ -61,12 +61,6 @@ cp %{SOURCE3} .
 export CFLAGS="$CFLAGS -DTIZEN_DEBUG_ENABLE"
 export CXXFLAGS="$CXXFLAGS -DTIZEN_DEBUG_ENABLE"
 export FFLAGS="$FFLAGS -DTIZEN_DEBUG_ENABLE"
-
-%ifarch %arm aarch64
-export CFLAGS="$CFLAGS -DTIZEN_DEVICE"
-export CXXFLAGS="$CXXFLAGS -DTIZEN_DEVICE"
-export FFLAGS="$FFLAGS -DTIZEN_DEVICE"
-%endif
 
 MAJORVER=`echo %{version} | awk 'BEGIN {FS="."}{print $1}'`
 cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix} -DFULLVER=%{version} -DMAJORVER=${MAJORVER} \
