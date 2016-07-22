@@ -312,7 +312,7 @@ static void __nps_callback(void *arg, const Plugin_LocationInfo *location, const
 
 	if (!location) {
 		LOG_NPS(DBG_LOW, "NULL is returned from plugin...");
-		nps_set_status (lbs_server , LBS_STATUS_ACQUIRING);
+		nps_set_status(lbs_server, LBS_STATUS_ACQUIRING);
 		return;
 	}
 
@@ -961,11 +961,11 @@ static void set_options(GVariant *options, const gchar *client, gpointer userdat
 			gint b_interval = 0, b_period = 0;
 			while (g_variant_iter_next(&iter, "{&sv}", &key, &value)) {
 
-				if (!g_strcmp0(key, "BATCH_INTERVAL")) {
+				if (!g_strcmp0(key, "BATCH_INTERVAL"))
 					b_interval = g_variant_get_int32(value);
-				} else if (!g_strcmp0(key, "BATCH_PERIOD")) {
+				else if (!g_strcmp0(key, "BATCH_PERIOD"))
 					b_period = g_variant_get_int32(value);
-				}
+
 			}
 			LOG_GPS(DBG_LOW, "BATCH_INTERVAL [%d], BATCH_PERIOD [%d]", b_interval, b_period);
 
@@ -975,8 +975,7 @@ static void set_options(GVariant *options, const gchar *client, gpointer userdat
 			start_batch_tracking(lbs_server, lbs_server->optimized_batch_array[LBS_BATCH_INTERVAL],
 											lbs_server->optimized_batch_array[LBS_BATCH_PERIOD]);
 
-		}
-		else if (!g_strcmp0(g_variant_get_string(value, &length), "STOP_BATCH")) {
+		} else if (!g_strcmp0(g_variant_get_string(value, &length), "STOP_BATCH")) {
 
 			if (client)
 				update_batch_tracking_interval(LBS_SERVER_INTERVAL_REMOVE, client, 0, 0, lbs_server);
@@ -1769,15 +1768,15 @@ static gboolean update_batch_tracking_interval(lbs_server_interval_manipulation_
 		case LBS_SERVER_INTERVAL_REMOVE: {
 			LOG_GPS(DBG_LOW, "REMOVE, client[%s]", client);
 			guint *interval_array = (guint *) g_hash_table_lookup(lbs_server->batch_interval_table, client);
-			if(!interval_array) {
+			if (!interval_array) {
 				LOG_GPS(DBG_INFO, "Client[%s] is already removed from batch-table", client);
 				break;
 			}
 			LOG_GPS(DBG_LOW, "Remove interval_array(%p):[%u, %u] from batch-table", interval_array, interval_array[LBS_BATCH_INTERVAL], interval_array[LBS_BATCH_PERIOD]);
 
-			if (!g_hash_table_remove(lbs_server->batch_interval_table, client)) {
+			if (!g_hash_table_remove(lbs_server->batch_interval_table, client))
 				LOG_GPS(DBG_ERR, "g_hash_table_remove is failed.");
-			}
+
 			break;
 		}
 
@@ -1794,7 +1793,7 @@ static gboolean update_batch_tracking_interval(lbs_server_interval_manipulation_
 		return FALSE;
 	} else {
 		LOG_GPS(DBG_LOW, "updates optimized-batch-interval.");
-		dynamic_interval_updator_user_data updator_user_data; // temporary struct
+		dynamic_interval_updator_user_data updator_user_data;
 		updator_user_data.lbs_server = lbs_server;
 
 		g_hash_table_foreach(lbs_server->batch_interval_table,
