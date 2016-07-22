@@ -1,3 +1,9 @@
+[Version]	lbs-server_1.0.5
+[Date]		7 Jul 2016
+[Changes]	Change batch behavior about HW batching in emulator mode.
+[Developer]	Kyoungjun Sung <kj7.sung@samsung.com>
+
+================================================================================
 [Version]	lbs-server_1.0.4
 [Date]		30 Jun 2016
 [Changes]	Change to non-root daemon.

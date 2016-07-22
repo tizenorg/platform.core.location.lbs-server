@@ -83,6 +83,10 @@ typedef struct {
 	guint *optimized_interval_array;
 	guint temp_minimum_interval;
 	gboolean is_needed_changing_interval;
+#ifndef TIZEN_DEVICE
+	GHashTable *batch_interval_table;
+	guint *optimized_batch_array;
+#endif
 
 	lbs_server_dbus_h lbs_dbus_server;
 
@@ -101,6 +105,14 @@ typedef struct {
 	lbs_server_s *lbs_server;
 	int method;
 } dynamic_interval_updator_user_data;
+
+#ifndef TIZEN_DEVICE
+typedef enum {
+	LBS_BATCH_INTERVAL = 0,
+	LBS_BATCH_PERIOD,
+	LBS_BATCH_SIZE,
+} lbs_batch_interval;
+#endif
 
 static gboolean gps_remove_all_clients(lbs_server_s *lbs_server);
 static NpsManagerPositionExt g_mock_position;
@@ -403,36 +415,33 @@ static void __nps_cancel_callback(void *arg)
 	g_mutex_unlock(&lbs_server->mutex);
 }
 
+#ifndef TIZEN_DEVICE
 static void start_batch_tracking(lbs_server_s *lbs_server, int batch_interval, int batch_period)
 {
+	LOG_GPS(DBG_LOW, "start_batch_tracking");
 	g_mutex_lock(&lbs_server->mutex);
 	lbs_server->gps_client_count++;
 	g_mutex_unlock(&lbs_server->mutex);
 
-	if (lbs_server->is_gps_running == TRUE) {
-		LOG_GPS(DBG_LOW, "Batch: gps is already running");
-		return;
+	if (lbs_server->is_gps_running == FALSE) {
+		LOG_GPS(DBG_LOW, "Batch: start_tracking GPS");
+		lbs_server->status = LBS_STATUS_ACQUIRING;
 	}
-	LOG_GPS(DBG_LOW, "Batch: start_tracking GPS");
-	lbs_server->status = LBS_STATUS_ACQUIRING;
 
 	if (request_start_batch_session(batch_interval, batch_period) == TRUE) {
 		g_mutex_lock(&lbs_server->mutex);
 		lbs_server->is_gps_running = TRUE;
 		g_mutex_unlock(&lbs_server->mutex);
 
-		lbs_server->is_needed_changing_interval = FALSE;
-
-		/* ADD notify */
 		setting_notify_key_changed(VCONFKEY_LOCATION_ENABLED, __setting_gps_cb, lbs_server);
 	} else {
 		LOG_GPS(DBG_ERR, "Batch: Fail to request_start_batch_session");
 	}
 }
 
-static void stop_batch_tracking(lbs_server_s *lbs_server)
+static void stop_batch_tracking(lbs_server_s *lbs_server, int batch_interval, int batch_period)
 {
-	LOG_GPS(DBG_LOW, "ENTER >>>");
+	LOG_GPS(DBG_LOW, "Batch: stop_tracking GPS");
 
 	g_mutex_lock(&lbs_server->mutex);
 	lbs_server->gps_client_count--;
@@ -443,22 +452,28 @@ static void stop_batch_tracking(lbs_server_s *lbs_server)
 		return;
 	}
 
+	int session_status = 1;		/* Keep current status */
 	if (lbs_server->gps_client_count <= 0) {
 		g_mutex_lock(&lbs_server->mutex);
 		lbs_server->gps_client_count = 0;
+		g_mutex_unlock(&lbs_server->mutex);
+		session_status = 0;		/* stop */
+	}
 
-		if (request_stop_batch_session() == TRUE) {
-			lbs_server->is_gps_running = FALSE;
-			lbs_server->sv_used = FALSE;
-			/* remove notify */
-			setting_ignore_key_changed(VCONFKEY_LOCATION_ENABLED, __setting_gps_cb);
-			g_mutex_unlock(&lbs_server->mutex);
-		}
+	/* TURE: All clients stopped, FALSE: Some clients are running with GPS or BATCH */
+	if (request_stop_batch_session(batch_interval, batch_period, session_status) == TRUE) {
+		g_mutex_lock(&lbs_server->mutex);
+		lbs_server->is_gps_running = FALSE;
+		lbs_server->sv_used = FALSE;
+		g_mutex_unlock(&lbs_server->mutex);
+
+		setting_ignore_key_changed(VCONFKEY_LOCATION_ENABLED, __setting_gps_cb);
 	}
 
 	lbs_server->status = LBS_STATUS_UNAVAILABLE;
 	lbs_server_emit_status_changed(lbs_server->lbs_dbus_server, LBS_SERVER_METHOD_GPS, LBS_STATUS_UNAVAILABLE);
 }
+#endif
 
 static void start_tracking(lbs_server_s *lbs_server, lbs_server_method_e method)
 {
@@ -711,77 +726,77 @@ static gboolean update_pos_tracking_interval(lbs_server_interval_manipulation_ty
 	/* manipulate logic for dynamic-interval hash table */
 	switch (type) {
 		case LBS_SERVER_INTERVAL_ADD: {
-				LOG_GPS(DBG_LOW, "ADD, client[%s], method[%d], interval[%u]", client, method, interval);
-				gchar *client_cpy = NULL;
-				client_cpy = g_strdup(client);
+			LOG_GPS(DBG_LOW, "ADD, client[%s], method[%d], interval[%u]", client, method, interval);
+			gchar *client_cpy = NULL;
+			client_cpy = g_strdup(client);
 
-				guint *interval_array = (guint *) g_hash_table_lookup(lbs_server->dynamic_interval_table, client_cpy);
+			guint *interval_array = (guint *) g_hash_table_lookup(lbs_server->dynamic_interval_table, client_cpy);
+			if (!interval_array) {
+				/* LOG_GPS(DBG_LOW, "first add key[%s] to interval-table", client); */
+				interval_array = (guint *)g_malloc0(LBS_SERVER_METHOD_SIZE * sizeof(guint));
 				if (!interval_array) {
-					/* LOG_GPS(DBG_LOW, "first add key[%s] to interval-table", client); */
-					interval_array = (guint *)g_malloc0(LBS_SERVER_METHOD_SIZE * sizeof(guint));
-					if (!interval_array) {
-						/* LOG_GPS(DBG_ERR, "interval_array is NULL"); */
-						g_free(client_cpy);
-						return FALSE;
-					}
-					g_hash_table_insert(lbs_server->dynamic_interval_table, (gpointer)client_cpy, (gpointer)interval_array);
+					/* LOG_GPS(DBG_ERR, "interval_array is NULL"); */
+					g_free(client_cpy);
+					return FALSE;
 				}
-				interval_array[method] = interval;
-				lbs_server->temp_minimum_interval = interval;
-				/* LOG_GPS(DBG_LOW, "ADD done"); */
-				break;
+				g_hash_table_insert(lbs_server->dynamic_interval_table, (gpointer)client_cpy, (gpointer)interval_array);
 			}
+			interval_array[method] = interval;
+			lbs_server->temp_minimum_interval = interval;
+			/* LOG_GPS(DBG_LOW, "ADD done"); */
+			break;
+		}
 
 		case LBS_SERVER_INTERVAL_REMOVE: {
-				LOG_GPS(DBG_LOW, "REMOVE, client[%s], method[%d]", client, method);
-				lbs_server->temp_minimum_interval = 120; /* interval max value */
-				guint *interval_array = (guint *) g_hash_table_lookup(lbs_server->dynamic_interval_table, client);
-				if (!interval_array) {
-					LOG_GPS(DBG_INFO, "Client[%s] Method[%d] is already removed from interval-table", client, method);
-					break;
-				}
-				LOG_GPS(DBG_LOW, "Found interval_array[%d](%p):[%u] from interval-table", method, interval_array, interval_array[method]);
-				interval_array[method] = 0;
-
-				int i = 0;
-				guint interval_each = 0;
-				gboolean is_need_remove_client_from_table = TRUE;
-				for (i = 0; i < LBS_SERVER_METHOD_SIZE; i++) {
-					interval_each = interval_array[i];
-					if (interval_each != 0) {
-						LOG_GPS(DBG_LOW, "[%s] method[%d]'s interval is not zero - interval: %d. It will not be removed.", client, i, interval_each);
-						is_need_remove_client_from_table = FALSE;
-						break;
-					}
-				}
-
-				if (is_need_remove_client_from_table) {
-					LOG_GPS(DBG_LOW, "is_need_remove_client_from_table is TRUE");
-					if (!g_hash_table_remove(lbs_server->dynamic_interval_table, client))
-						LOG_GPS(DBG_ERR, "g_hash_table_remove is failed.");
-
-					LOG_GPS(DBG_LOW, "REMOVE done.");
-				}
+			LOG_GPS(DBG_LOW, "REMOVE, client[%s], method[%d]", client, method);
+			lbs_server->temp_minimum_interval = 120; /* interval max value */
+			guint *interval_array = (guint *) g_hash_table_lookup(lbs_server->dynamic_interval_table, client);
+			if (!interval_array) {
+				LOG_GPS(DBG_INFO, "Client[%s] Method[%d] is already removed from interval-table", client, method);
 				break;
 			}
+			LOG_GPS(DBG_LOW, "Found interval_array[%d](%p):[%u] from interval-table", method, interval_array, interval_array[method]);
+			interval_array[method] = 0;
+
+			int i = 0;
+			guint interval_each = 0;
+			gboolean is_need_remove_client_from_table = TRUE;
+			for (i = 0; i < LBS_SERVER_METHOD_SIZE; i++) {
+				interval_each = interval_array[i];
+				if (interval_each != 0) {
+					LOG_GPS(DBG_LOW, "[%s] method[%d]'s interval is not zero - interval: %d. It will not be removed.", client, i, interval_each);
+					is_need_remove_client_from_table = FALSE;
+					break;
+				}
+			}
+
+			if (is_need_remove_client_from_table) {
+				LOG_GPS(DBG_LOW, "is_need_remove_client_from_table is TRUE");
+				if (!g_hash_table_remove(lbs_server->dynamic_interval_table, client))
+					LOG_GPS(DBG_ERR, "g_hash_table_remove is failed.");
+
+				LOG_GPS(DBG_LOW, "REMOVE done.");
+			}
+			break;
+		}
 
 		case LBS_SERVER_INTERVAL_UPDATE: {
-				LOG_GPS(DBG_LOW, "UPDATE client[%s], method[%d], interval[%u]", client, method, interval);
-				guint *interval_array = (guint *) g_hash_table_lookup(lbs_server->dynamic_interval_table, client);
-				if (!interval_array) {
-					LOG_GPS(DBG_LOW, "Client[%s] is not exist in interval-table", client, method);
-					break;
-				}
-				interval_array[method] = interval;
-				lbs_server->temp_minimum_interval = interval;
-				LOG_GPS(DBG_LOW, "UPDATE done.");
+			LOG_GPS(DBG_LOW, "UPDATE client[%s], method[%d], interval[%u]", client, method, interval);
+			guint *interval_array = (guint *) g_hash_table_lookup(lbs_server->dynamic_interval_table, client);
+			if (!interval_array) {
+				LOG_GPS(DBG_LOW, "Client[%s] is not exist in interval-table", client, method);
 				break;
 			}
+			interval_array[method] = interval;
+			lbs_server->temp_minimum_interval = interval;
+			LOG_GPS(DBG_LOW, "UPDATE done.");
+			break;
+		}
 
 		default: {
-				LOG_GPS(DBG_ERR, "unhandled interval-update type");
-				return FALSE;
-			}
+			LOG_GPS(DBG_ERR, "unhandled interval-update type");
+			return FALSE;
+		}
 	}
 
 	/* update logic for optimized-interval value */
@@ -793,8 +808,6 @@ static gboolean update_pos_tracking_interval(lbs_server_interval_manipulation_ty
 
 		ret_val = FALSE;
 	} else {
-		LOG_GPS(DBG_LOW, "dynamic_interval_table size is not zero.");
-
 		dynamic_interval_updator_user_data updator_user_data;
 		updator_user_data.lbs_server = lbs_server;
 		updator_user_data.method = method;
@@ -815,7 +828,6 @@ static gboolean update_pos_tracking_interval(lbs_server_interval_manipulation_ty
 		else
 			ret_val = FALSE;
 	}
-	LOG_GPS(DBG_LOW, "update_pos_tracking_interval done.");
 	return ret_val;
 }
 
@@ -843,6 +855,10 @@ static void get_nmea(int *timestamp, gchar **nmea_data, gpointer userdata)
 
 	LOG_GPS(DBG_LOW, "timestmap: %d, nmea_data: %s", *timestamp, *nmea_data);
 }
+
+#ifndef TIZEN_DEVICE
+static gboolean update_batch_tracking_interval(lbs_server_interval_manipulation_type type, const gchar *client, guint interval, guint period, gpointer userdata);
+#endif
 
 static void set_options(GVariant *options, const gchar *client, gpointer userdata)
 {
@@ -938,43 +954,38 @@ static void set_options(GVariant *options, const gchar *client, gpointer userdat
 				lbs_server->is_needed_changing_interval = FALSE;
 				request_change_pos_update_interval(method, (gpointer)lbs_server);
 			}
-		} else if (!g_strcmp0(g_variant_get_string(value, &length), "START_BATCH")) {
+		}
+#ifndef TIZEN_DEVICE
+		else if (!g_strcmp0(g_variant_get_string(value, &length), "START_BATCH")) {
 
-			int batch_interval = 0;
-			int batch_period = 0;
+			gint b_interval = 0, b_period = 0;
 			while (g_variant_iter_next(&iter, "{&sv}", &key, &value)) {
 
 				if (!g_strcmp0(key, "BATCH_INTERVAL")) {
-					batch_interval = g_variant_get_int32(value);
-					LOG_GPS(DBG_LOW, "BATCH_INTERVAL [%d]", batch_interval);
+					b_interval = g_variant_get_int32(value);
 				} else if (!g_strcmp0(key, "BATCH_PERIOD")) {
-					batch_period = g_variant_get_int32(value);
-					LOG_GPS(DBG_LOW, "BATCH_PERIOD [%d]", batch_period);
+					b_period = g_variant_get_int32(value);
 				}
 			}
+			LOG_GPS(DBG_LOW, "BATCH_INTERVAL [%d], BATCH_PERIOD [%d]", b_interval, b_period);
 
 			if (client)
-				update_pos_tracking_interval(LBS_SERVER_INTERVAL_ADD, client, method, batch_interval, lbs_server);
+				update_batch_tracking_interval(LBS_SERVER_INTERVAL_ADD, client, b_interval, b_period, lbs_server);
 
-			start_batch_tracking(lbs_server, batch_interval, batch_period);
+			start_batch_tracking(lbs_server, lbs_server->optimized_batch_array[LBS_BATCH_INTERVAL],
+											lbs_server->optimized_batch_array[LBS_BATCH_PERIOD]);
 
-			if (lbs_server->is_needed_changing_interval) {
-				lbs_server->is_needed_changing_interval = FALSE;
-				request_change_pos_update_interval(method, (gpointer)lbs_server);
-			}
-
-		} else if (!g_strcmp0(g_variant_get_string(value, &length), "STOP_BATCH")) {
-
-			if (client)
-				update_pos_tracking_interval(LBS_SERVER_INTERVAL_REMOVE, client, method, interval, lbs_server);
-
-			stop_batch_tracking(lbs_server);
-
-			if (lbs_server->is_needed_changing_interval) {
-				lbs_server->is_needed_changing_interval = FALSE;
-				request_change_pos_update_interval(method, (gpointer)lbs_server);
-			}
 		}
+		else if (!g_strcmp0(g_variant_get_string(value, &length), "STOP_BATCH")) {
+
+			if (client)
+				update_batch_tracking_interval(LBS_SERVER_INTERVAL_REMOVE, client, 0, 0, lbs_server);
+
+			stop_batch_tracking(lbs_server, lbs_server->optimized_batch_array[LBS_BATCH_INTERVAL],
+											lbs_server->optimized_batch_array[LBS_BATCH_PERIOD]);
+
+		}
+#endif
 #ifdef _TIZEN_PUBLIC_
 		else if (!g_strcmp0(g_variant_get_string(value, &length), "SUPLNI")) {
 			while (g_variant_iter_next(&iter, "{&sv}", &key, &value)) {
@@ -1099,8 +1110,7 @@ static void shutdown(gpointer userdata, gboolean *shutdown_arr)
 
 static void gps_update_position_cb(pos_data_t *pos, gps_error_t error, void *user_data)
 {
-	LOG_GPS(DBG_LOW, "ENTER >>>");
-
+	/* LOG_GPS(DBG_LOW, "ENTER >>>"); */
 	GVariant *accuracy = NULL;
 	LbsPositionExtFields fields;
 
@@ -1130,7 +1140,7 @@ static void gps_update_position_cb(pos_data_t *pos, gps_error_t error, void *use
 
 static void gps_update_batch_cb(batch_data_t *batch, void *user_data)
 {
-	LOG_GPS(DBG_LOW, "ENTER >>>");
+	/* LOG_GPS(DBG_LOW, "gps_update_batch_cb"); */
 	lbs_server_s *lbs_server = (lbs_server_s *)(user_data);
 	memcpy(&lbs_server->batch, batch, sizeof(batch_data_t));
 
@@ -1146,7 +1156,7 @@ static void gps_update_satellite_cb(sv_data_t *sv, void *user_data)
 {
 	lbs_server_s *lbs_server = (lbs_server_s *)(user_data);
 	if (lbs_server->sv_used == FALSE) {
-		/*LOG_GPS(DBG_LOW, "sv_used is FALSE"); */
+		/* LOG_GPS(DBG_LOW, "sv_used is FALSE"); */
 		return;
 	}
 
@@ -1270,6 +1280,13 @@ static void lbs_server_init(lbs_server_s *lbs_server)
 	lbs_server->is_mock_running = FALSE;
 	lbs_server->gps_client_count = 0;
 	lbs_server->mock_timer = 0;
+
+#ifndef TIZEN_DEVICE
+	lbs_server->batch_interval_table = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+	lbs_server->optimized_batch_array = (guint *)g_malloc0(LBS_BATCH_SIZE * sizeof(guint));
+	lbs_server->optimized_batch_array[LBS_BATCH_INTERVAL] = 150;
+	lbs_server->optimized_batch_array[LBS_BATCH_PERIOD] = 60000;
+#endif
 }
 
 static void nps_get_last_position(lbs_server_s *lbs_server_nps)
@@ -1471,6 +1488,7 @@ int main(int argc, char **argv)
 		LOG_GPS(DBG_ERR, "lbs_server_create failed");
 		return 1;
 	}
+
 	LOG_GPS(DBG_LOW, "lbs_server_create called");
 
 	lbs_server->loop = g_main_loop_new(NULL, TRUE);
@@ -1483,7 +1501,10 @@ int main(int argc, char **argv)
 	/* destroy resource for dynamic-interval */
 	g_free(lbs_server->optimized_interval_array);
 	g_hash_table_destroy(lbs_server->dynamic_interval_table);
-
+#ifndef TIZEN_DEVICE
+	g_free(lbs_server->optimized_batch_array);
+	g_hash_table_destroy(lbs_server->batch_interval_table);
+#endif
 	/* free dbus callback */
 	g_free(lbs_dbus_callback);
 
@@ -1707,3 +1728,91 @@ static void __setting_mock_cb(keynode_t *key, gpointer user_data)
 			LOG_MOCK(DBG_LOW, "already removed.");
 	}
 }
+
+#ifndef TIZEN_DEVICE
+static void update_batch_interval_table_foreach_cb(gpointer key, gpointer value, gpointer userdata)
+{
+	guint *interval_array = (guint *)value;
+	dynamic_interval_updator_user_data *updator_ud = (dynamic_interval_updator_user_data *)userdata;
+	lbs_server_s *lbs_server = updator_ud->lbs_server;
+
+	if (lbs_server->optimized_batch_array[LBS_BATCH_INTERVAL] > interval_array[LBS_BATCH_INTERVAL])
+		lbs_server->optimized_batch_array[LBS_BATCH_INTERVAL] = interval_array[LBS_BATCH_INTERVAL];
+
+	if (lbs_server->optimized_batch_array[LBS_BATCH_PERIOD] > interval_array[LBS_BATCH_PERIOD])
+		lbs_server->optimized_batch_array[LBS_BATCH_PERIOD] = interval_array[LBS_BATCH_PERIOD];
+
+	LOG_GPS(DBG_LOW, "foreach dynamic-batch. key:[%s]-batch[interval:%u, period:%u], optimized [%u, %u]", (char *)key, interval_array[LBS_BATCH_INTERVAL], interval_array[LBS_BATCH_PERIOD], lbs_server->optimized_batch_array[LBS_BATCH_INTERVAL], lbs_server->optimized_batch_array[LBS_BATCH_PERIOD]);
+}
+
+static gboolean update_batch_tracking_interval(lbs_server_interval_manipulation_type type, const gchar *client, guint interval, guint period, gpointer userdata)
+{
+	LOG_GPS(DBG_INFO, "update_batch_tracking_interval");
+	if (userdata == NULL) return FALSE;
+	if (client == NULL) {
+		LOG_GPS(DBG_ERR, "client is NULL");
+		return FALSE;
+	}
+
+	lbs_server_s *lbs_server = (lbs_server_s *)userdata;
+
+	switch (type) {
+		case LBS_SERVER_INTERVAL_ADD: {
+			LOG_GPS(DBG_LOW, "ADD, client[%s], interval[%u], period[%u]", client, interval, period);
+			gchar *client_cpy = NULL;
+			client_cpy = g_strdup(client);
+
+			guint* interval_array = (guint *) g_hash_table_lookup(lbs_server->batch_interval_table, client_cpy);
+			if (!interval_array) {
+				LOG_GPS(DBG_LOW, "first add key[%s] to batch-table", client);
+				interval_array = (guint *)g_malloc0(LBS_BATCH_SIZE * sizeof(guint));
+				if (!interval_array) {
+					LOG_GPS(DBG_ERR, "interval_array is NULL");
+					g_free(client_cpy);
+					return FALSE;
+				}
+				g_hash_table_insert(lbs_server->batch_interval_table, (gpointer)client_cpy, (gpointer)interval_array);
+			}
+			interval_array[LBS_BATCH_INTERVAL] = interval;
+			interval_array[LBS_BATCH_PERIOD] = period;
+			break;
+		}
+
+		case LBS_SERVER_INTERVAL_REMOVE: {
+			LOG_GPS(DBG_LOW, "REMOVE, client[%s]", client);
+			guint *interval_array = (guint *) g_hash_table_lookup(lbs_server->batch_interval_table, client);
+			if(!interval_array) {
+				LOG_GPS(DBG_INFO, "Client[%s] is already removed from batch-table", client);
+				break;
+			}
+			LOG_GPS(DBG_LOW, "Remove interval_array(%p):[%u, %u] from batch-table", interval_array, interval_array[LBS_BATCH_INTERVAL], interval_array[LBS_BATCH_PERIOD]);
+
+			if (!g_hash_table_remove(lbs_server->batch_interval_table, client)) {
+				LOG_GPS(DBG_ERR, "g_hash_table_remove is failed.");
+			}
+			break;
+		}
+
+		default: {
+			LOG_GPS(DBG_ERR, "unhandled interval-update type");
+			return FALSE;
+		}
+	}
+
+	lbs_server->optimized_batch_array[LBS_BATCH_INTERVAL] = 151;
+	lbs_server->optimized_batch_array[LBS_BATCH_PERIOD] = 60001;
+
+	if (g_hash_table_size(lbs_server->batch_interval_table) == 0) {
+		return FALSE;
+	} else {
+		LOG_GPS(DBG_LOW, "updates optimized-batch-interval.");
+		dynamic_interval_updator_user_data updator_user_data; // temporary struct
+		updator_user_data.lbs_server = lbs_server;
+
+		g_hash_table_foreach(lbs_server->batch_interval_table,
+							(GHFunc) update_batch_interval_table_foreach_cb, (gpointer) &updator_user_data);
+	}
+	LOG_GPS(DBG_LOW, "Updates_batch_tracking_interval done.");
+	return TRUE;
+}
+#endif

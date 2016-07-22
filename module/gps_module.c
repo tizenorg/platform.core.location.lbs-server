@@ -156,7 +156,7 @@ static void position_callback(GVariant *param, void *user_data)
 
 	g_variant_get(param, "(iiidddddd@(idd))", &method, &fields, &timestamp, &latitude, &longitude, &altitude, &speed, &direction, &climb, &accuracy);
 
-	MOD_MOCK_LOGD("position_callback [method: %d, field: %d]", method, fields);
+	/* MOD_LOGD("position_callback [method: %d, field: %d]", method, fields); */
 	if (method != LBS_CLIENT_METHOD_GPS) {
 		MOD_LOGD("Method is not LBS_CLIENT_METHOD_GPS: %d", method);
 		return;
