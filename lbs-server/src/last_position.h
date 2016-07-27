@@ -30,4 +30,6 @@ void gps_set_position(const pos_data_t *pos);
 
 void gps_get_last_position(pos_data_t *last_pos);
 
+void gps_set_last_mock(int timestamp, double lat, double lon, double alt, double spd, double dir, double h_acc);
+
 #endif				/* _LAST_POSITON_H_ */

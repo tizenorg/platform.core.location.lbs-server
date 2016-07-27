@@ -3,7 +3,6 @@ PROJECT(client C)
 
 SET(gps_module "gps")
 SET(nps_module "wps")
-SET(mock_module "mock")
 
 SET(CLIENT_SRCS_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 SET(module_pkgs_LDFLAGS "${module_pkgs_LDFLAGS} -ldl")
@@ -26,9 +25,3 @@ IF (ENABLE_WPS)
 	INSTALL(TARGETS ${nps_module} DESTINATION ${LIB_DIR}/location/module)
 ENDIF (ENABLE_WPS)
 
-ADD_LIBRARY(${mock_module} SHARED ${CLIENT_SRCS_DIR}/mock_module.c)
-TARGET_LINK_LIBRARIES(${mock_module} ${module_pkgs_LDFLAGS})
-SET_TARGET_PROPERTIES(${mock_module} PROPERTIES VERSION ${FULLVER} SOVERSION ${MAJORVER} CLEAN_DIRECT_OUTPUT 1)
-SET_TARGET_PROPERTIES(${mock_module} PROPERTIES COMPILE_FLAGS ${MODULE_EXTRA_CFLAGS})
-
-INSTALL(TARGETS ${mock_module} DESTINATION ${LIB_DIR}/location/module)

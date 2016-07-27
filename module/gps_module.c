@@ -39,6 +39,7 @@
 #include "log.h"
 
 #define MAX_GPS_LOC_ITEM	7
+#define MOCK_LOCATION_CLEAR_VALUE 999
 
 typedef struct {
 	lbs_client_dbus_h lbs_client;
@@ -156,10 +157,11 @@ static void position_callback(GVariant *param, void *user_data)
 
 	g_variant_get(param, "(iiidddddd@(idd))", &method, &fields, &timestamp, &latitude, &longitude, &altitude, &speed, &direction, &climb, &accuracy);
 
-	/* MOD_LOGD("position_callback [method: %d, field: %d]", method, fields); */
 	if (method != LBS_CLIENT_METHOD_GPS) {
-		MOD_LOGD("Method is not LBS_CLIENT_METHOD_GPS: %d", method);
-		return;
+		if (method != LBS_CLIENT_METHOD_MOCK) {
+			MOD_LOGD("Method is not LBS_CLIENT_METHOD_GPS: %d", method);
+			return;
+		}
 	}
 
 	g_variant_get(accuracy, "(idd)", &level, &horizontal, &vertical);
@@ -505,18 +507,91 @@ static int set_position_update_interval(gpointer handle, guint interval)
 	return LOCATION_ERROR_NONE;
 }
 
+static int set_mock_location(gpointer handle, LocationPosition *position, LocationVelocity *velocity,
+				LocationAccuracy *accuracy, LocModStatusCB mock_status_cb, gpointer userdata)
+{
+	MOD_LOGD("ENTER >>> set_mock_location");
+	GpsManagerData *mod_gps = (GpsManagerData *) handle;
+	g_return_val_if_fail(mod_gps, LOCATION_ERROR_NOT_AVAILABLE);
+	int ret = LBS_CLIENT_ERROR_NONE;
+
+	if (mod_gps->lbs_client == NULL) {
+		ret = lbs_client_create(LBS_CLIENT_METHOD_GPS , &(mod_gps->lbs_client));
+		if (ret != LBS_CLIENT_ERROR_NONE || !mod_gps->lbs_client) {
+			MOD_LOGE("Fail to create lbs_client_h. Error[%d]", ret);
+			return LOCATION_ERROR_NOT_AVAILABLE;
+		}
+	}
+	mod_gps->userdata = userdata;
+
+	ret = lbs_client_set_mock_location_async(mod_gps->lbs_client, LBS_CLIENT_METHOD_GPS,
+						position->latitude, position->longitude, position->altitude,
+						velocity->speed, velocity->direction, accuracy->horizontal_accuracy, NULL, mod_gps);
+
+	if (ret != LBS_CLIENT_ERROR_NONE) {
+		if (ret == LBS_CLIENT_ERROR_ACCESS_DENIED) {
+			MOD_LOGE("Access denied[%d]", ret);
+			return LOCATION_ERROR_NOT_ALLOWED;
+		}
+		MOD_LOGE("Fail to start lbs_client_h. Error[%d]", ret);
+		lbs_client_destroy(mod_gps->lbs_client);
+		mod_gps->lbs_client = NULL;
+
+		return LOCATION_ERROR_NOT_AVAILABLE;
+	}
+
+	return LOCATION_ERROR_NONE;
+}
+
+static int clear_mock_location(gpointer handle,	LocModStatusCB mock_status_cb, gpointer userdata)
+{
+	MOD_LOGD("ENTER >>> clear_mock_location");
+	GpsManagerData *mod_gps = (GpsManagerData *) handle;
+	g_return_val_if_fail(mod_gps, LOCATION_ERROR_NOT_AVAILABLE);
+	int ret = LBS_CLIENT_ERROR_NONE;
+
+	if (mod_gps->lbs_client == NULL) {
+		ret = lbs_client_create(LBS_CLIENT_METHOD_GPS , &(mod_gps->lbs_client));
+		if (ret != LBS_CLIENT_ERROR_NONE || !mod_gps->lbs_client) {
+			MOD_LOGE("Fail to create lbs_client_h. Error[%d]", ret);
+			return LOCATION_ERROR_NOT_AVAILABLE;
+		}
+	}
+	mod_gps->userdata = userdata;
+
+	ret = lbs_client_set_mock_location_async(mod_gps->lbs_client, LBS_CLIENT_METHOD_GPS,
+											MOCK_LOCATION_CLEAR_VALUE, 0, 0, 0, 0, 0, NULL, mod_gps);
+
+	if (ret != LBS_CLIENT_ERROR_NONE) {
+		if (ret == LBS_CLIENT_ERROR_ACCESS_DENIED) {
+			MOD_LOGE("Access denied[%d]", ret);
+			return LOCATION_ERROR_NOT_ALLOWED;
+		}
+		MOD_LOGE("Fail to start lbs_client_h. Error[%d]", ret);
+		lbs_client_destroy(mod_gps->lbs_client);
+		mod_gps->lbs_client = NULL;
+
+		return LOCATION_ERROR_NOT_AVAILABLE;
+	}
+
+	return LOCATION_ERROR_NONE;
+}
+
 LOCATION_MODULE_API gpointer init(LocModGpsOps *ops)
 {
 	MOD_LOGD("init");
 
 	g_return_val_if_fail(ops, NULL);
 	ops->start = start;
-	ops->start_batch = start_batch;
 	ops->stop = stop;
-	ops->stop_batch = stop_batch;
 	ops->get_last_position = get_last_position;
 	ops->set_option = set_option;
 	ops->set_position_update_interval = set_position_update_interval;
+
+	ops->start_batch = start_batch;
+	ops->stop_batch = stop_batch;
+	ops->set_mock_location = set_mock_location;
+	ops->clear_mock_location = clear_mock_location;
 
 	Dl_info info;
 	if (dladdr(&get_last_position, &info) == 0)
