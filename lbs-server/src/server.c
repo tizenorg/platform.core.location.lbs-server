@@ -587,7 +587,6 @@ static void _report_pos_event(gps_server_t *server, gps_event_info_t *gps_event)
 		memcpy(server->pos_data, &(gps_event->event_data.pos_ind.pos), sizeof(pos_data_t));
 		/* change m/s to km/h */
 		server->pos_data->speed = server->pos_data->speed * MPS_TO_KMPH;
-		gps_set_position(server->pos_data);
 		g_update_cb.pos_cb(server->pos_data, gps_event->event_data.pos_ind.error, g_user_data);
 	} else {
 		LOG_GPS(DBG_ERR, "server->pos_data is NULL");

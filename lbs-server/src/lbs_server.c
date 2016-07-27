@@ -41,12 +41,6 @@
 #include "debug_util.h"
 #include "dump_log.h"
 
-
-/* For test
-#define VCONFKEY_LOCATION_MOCK_ENABLED "db/location/setting/MockEnabled"
-#define VCONFKEY_LOCATION_MOCK_STATE "memory/location/mock/state"
-*/
-
 #define MOCK_LOCATION_CLEAR_VALUE 999
 
 typedef struct {
@@ -92,11 +86,9 @@ typedef struct {
 
 	/* mock variables */
 	gboolean is_mock_running;
-	gint mock_client_count;
 	gint mock_timer;
-	LbsStatus mock_status;
 
-	NpsManagerPositionExt mock_position;
+	NpsManagerPositionExt mock_pos;
 	GVariant *mock_accuracy;
 
 } lbs_server_s;
@@ -119,8 +111,6 @@ static NpsManagerPositionExt g_mock_position;
 static void set_mock_location_cb(gint method, gdouble latitude, gdouble longitude, gdouble altitude, gdouble speed, gdouble direction, gdouble accuracy, gpointer userdata);
 static int mock_start_tracking(lbs_server_s *lbs_server);
 static int mock_stop_tracking(lbs_server_s *lbs_server);
-static void mock_set_status(lbs_server_s *lbs_server, LbsStatus status);
-static void __setting_mock_cb(keynode_t *key, gpointer user_data);
 
 
 static void __setting_gps_cb(keynode_t *key, gpointer user_data)
@@ -214,6 +204,9 @@ static void nps_update_position(lbs_server_s *lbs_server_nps, NpsManagerPosition
 		LOG_NPS(DBG_ERR, "lbs-server is NULL!!");
 		return;
 	}
+
+	if (lbs_server_nps->is_mock_running)
+		return ;
 
 	GVariant *accuracy = NULL;
 
@@ -424,7 +417,7 @@ static void start_batch_tracking(lbs_server_s *lbs_server, int batch_interval, i
 	g_mutex_unlock(&lbs_server->mutex);
 
 	if (lbs_server->is_gps_running == FALSE) {
-		LOG_GPS(DBG_LOW, "Batch: start_tracking GPS");
+		LOG_GPS(DBG_LOW, "Batch: start tracking GPS");
 		lbs_server->status = LBS_STATUS_ACQUIRING;
 	}
 
@@ -487,11 +480,15 @@ static void start_tracking(lbs_server_s *lbs_server, lbs_server_method_e method)
 		lbs_server->gps_client_count++;
 		g_mutex_unlock(&lbs_server->mutex);
 
+		if (lbs_server->is_mock_running && lbs_server->is_gps_running == FALSE) {
+			mock_start_tracking(lbs_server);
+		}
+
 		if (lbs_server->is_gps_running == TRUE) {
 			LOG_GPS(DBG_LOW, "gps is already running");
 			return;
 		}
-		LOG_GPS(DBG_LOW, "start_tracking GPS");
+		LOG_GPS(DBG_LOW, "start tracking GPS");
 		lbs_server->status = LBS_STATUS_ACQUIRING;
 
 		if (request_start_session((int)(lbs_server->optimized_interval_array[method])) == TRUE) {
@@ -544,31 +541,6 @@ static void start_tracking(lbs_server_s *lbs_server, lbs_server_method_e method)
 		nps_set_status(lbs_server, LBS_STATUS_ERROR);
 		break;
 
-	case LBS_SERVER_METHOD_MOCK:
-		g_mutex_lock(&lbs_server->mutex);
-		lbs_server->mock_client_count++;
-		g_mutex_unlock(&lbs_server->mutex);
-
-		if (lbs_server->is_mock_running == TRUE) {
-			LOG_MOCK(DBG_LOW, "mock is already running");
-			return;
-		}
-
-		LOG_MOCK(DBG_LOW, "start_tracking MOCK");
-		ret = mock_start_tracking(lbs_server);
-		if (ret) {
-			g_mutex_lock(&lbs_server->mutex);
-			lbs_server->is_mock_running = TRUE;
-			g_mutex_unlock(&lbs_server->mutex);
-
-			/* ADD notify */
-			setting_notify_key_changed(VCONFKEY_LOCATION_MOCK_ENABLED, __setting_mock_cb, lbs_server);
-			return;
-		} else {
-			LOG_MOCK(DBG_ERR, "Failed to start MOCK");
-		}
-		break;
-
 	default:
 		LOG_GPS(DBG_LOW, "start_tracking Invalid");
 		break;
@@ -615,7 +587,8 @@ static void stop_tracking(lbs_server_s *lbs_server, lbs_server_method_e method)
 	case LBS_SERVER_METHOD_GPS:
 		LOG_GPS(DBG_LOW, "stop_tracking GPS");
 
-		gps_set_last_position(&lbs_server->position);
+		if (lbs_server->is_mock_running == FALSE)
+			gps_set_last_position(&lbs_server->position);
 
 		g_mutex_lock(&lbs_server->mutex);
 		lbs_server->gps_client_count--;
@@ -662,29 +635,6 @@ static void stop_tracking(lbs_server_s *lbs_server, lbs_server_method_e method)
 
 			LOG_NPS(DBG_LOW, "lbs_server_nps Normal stop");
 			nps_stop(lbs_server);
-		}
-
-		break;
-	case LBS_SERVER_METHOD_MOCK:
-		LOG_NPS(DBG_LOW, "stop_tracking MOCK");
-
-		g_mutex_lock(&lbs_server->mutex);
-		lbs_server->mock_client_count--;
-		g_mutex_unlock(&lbs_server->mutex);
-
-		if (lbs_server->is_mock_running == FALSE) {
-			LOG_NPS(DBG_LOW, "mock is already stopped");
-			return;
-		}
-
-		if (lbs_server->mock_client_count <= 0) {
-			g_mutex_lock(&lbs_server->mutex);
-			lbs_server->mock_client_count = 0;
-			g_mutex_unlock(&lbs_server->mutex);
-
-			LOG_NPS(DBG_LOW, "lbs_server_mock Normal stop");
-			mock_stop_tracking(lbs_server);
-			setting_ignore_key_changed(VCONFKEY_LOCATION_MOCK_ENABLED, __setting_mock_cb);
 		}
 
 		break;
@@ -954,6 +904,25 @@ static void set_options(GVariant *options, const gchar *client, gpointer userdat
 				lbs_server->is_needed_changing_interval = FALSE;
 				request_change_pos_update_interval(method, (gpointer)lbs_server);
 			}
+/*		} else if (!g_strcmp0(g_variant_get_string(value, &length), "CLEAR_MOCK")) {
+
+			while (g_variant_iter_next(&iter, "{&sv}", &key, &value)) {
+				if (!g_strcmp0(key, "METHOD")) {
+					method = g_variant_get_int32(value);
+					LOG_GPS(DBG_LOW, "METHOD [%d]", method);
+				}
+			}
+
+			if (lbs_server->is_mock_running) {
+				g_mutex_lock(&lbs_server->mutex);
+				lbs_server->is_mock_running = FALSE;
+				g_mutex_unlock(&lbs_server->mutex);
+
+				mock_stop_tracking(lbs_server);
+				g_mock_position.timestamp = 0;
+			}
+*/
+
 		}
 #ifndef TIZEN_DEVICE
 		else if (!g_strcmp0(g_variant_get_string(value, &length), "START_BATCH")) {
@@ -1059,6 +1028,10 @@ static gboolean gps_remove_all_clients(lbs_server_s *lbs_server)
 		return FALSE;
 	}
 
+	if (lbs_server->is_mock_running) {
+		mock_stop_tracking(lbs_server);
+	}
+
 	lbs_server->gps_client_count = 0;
 	stop_tracking(lbs_server, LBS_SERVER_METHOD_GPS);
 
@@ -1067,8 +1040,7 @@ static gboolean gps_remove_all_clients(lbs_server_s *lbs_server)
 
 static void shutdown(gpointer userdata, gboolean *shutdown_arr)
 {
-	LOG_GPS(DBG_LOW, "shutdown callback gps:%d nps:%d, mock:%d",
-		shutdown_arr[LBS_SERVER_METHOD_GPS], shutdown_arr[LBS_SERVER_METHOD_NPS], shutdown_arr[LBS_SERVER_METHOD_MOCK]);
+	LOG_GPS(DBG_LOW, "shutdown callback gps:%d nps:%d", shutdown_arr[LBS_SERVER_METHOD_GPS], shutdown_arr[LBS_SERVER_METHOD_NPS]);
 	lbs_server_s *lbs_server = (lbs_server_s *)userdata;
 
 	if (shutdown_arr[LBS_SERVER_METHOD_GPS]) {
@@ -1084,14 +1056,6 @@ static void shutdown(gpointer userdata, gboolean *shutdown_arr)
 		if (lbs_server->is_nps_running) {
 			LOG_NPS(DBG_ERR, "lbs_server_nps is running. nps_stop");
 			nps_stop(lbs_server);
-		}
-	}
-
-	if (shutdown_arr[LBS_SERVER_METHOD_MOCK]) {
-		LOG_NPS(DBG_LOW, "-> shutdown MOCK");
-		if (lbs_server->is_mock_running) {
-			LOG_NPS(DBG_ERR, "mock location is running");
-			mock_stop_tracking(lbs_server);
 		}
 	}
 
@@ -1116,6 +1080,9 @@ static void gps_update_position_cb(pos_data_t *pos, gps_error_t error, void *use
 
 	lbs_server_s *lbs_server = (lbs_server_s *)(user_data);
 
+	if (lbs_server->is_mock_running)
+		return ;
+
 	memcpy(&lbs_server->position, pos, sizeof(pos_data_t));
 
 	if (lbs_server->status != LBS_STATUS_AVAILABLE) {
@@ -1126,8 +1093,10 @@ static void gps_update_position_cb(pos_data_t *pos, gps_error_t error, void *use
 	fields = (LBS_POSITION_EXT_FIELDS_LATITUDE | LBS_POSITION_EXT_FIELDS_LONGITUDE | LBS_POSITION_EXT_FIELDS_ALTITUDE | LBS_POSITION_EXT_FIELDS_SPEED | LBS_POSITION_EXT_FIELDS_DIRECTION);
 
 	accuracy = g_variant_new("(idd)", LBS_ACCURACY_LEVEL_DETAILED, pos->hor_accuracy, pos->ver_accuracy);
-	if (NULL == accuracy)
+	if (accuracy == NULL)
 		LOG_GPS(DBG_LOW, "accuracy is NULL");
+
+	gps_set_position(pos);
 
 	lbs_server_emit_position_changed(lbs_server->lbs_dbus_server, LBS_SERVER_METHOD_GPS, fields, pos->timestamp,
 									pos->latitude, pos->longitude, pos->altitude, pos->speed, pos->bearing, 0.0, accuracy);
@@ -1150,10 +1119,8 @@ static void gps_update_batch_cb(batch_data_t *batch, void *user_data)
 static void gps_update_satellite_cb(sv_data_t *sv, void *user_data)
 {
 	lbs_server_s *lbs_server = (lbs_server_s *)(user_data);
-	if (lbs_server->sv_used == FALSE) {
-		/* LOG_GPS(DBG_LOW, "sv_used is FALSE"); */
+	if (lbs_server->sv_used == FALSE)
 		return;
-	}
 
 	LOG_GPS(DBG_LOW, "ENTER >>>");
 	int index;
@@ -1271,10 +1238,9 @@ static void lbs_server_init(lbs_server_s *lbs_server)
 	lbs_server->is_needed_changing_interval = FALSE;
 
 	/* Mock Location init */
-	lbs_server->mock_status = LBS_STATUS_UNAVAILABLE;
 	lbs_server->is_mock_running = FALSE;
-	lbs_server->gps_client_count = 0;
 	lbs_server->mock_timer = 0;
+	lbs_server->mock_accuracy = NULL;
 
 #ifndef TIZEN_DEVICE
 	lbs_server->batch_interval_table = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
@@ -1521,7 +1487,7 @@ int main(int argc, char **argv)
 /* Tizen 3.0 */
 
 static void set_mock_location_cb(gint method, gdouble latitude, gdouble longitude, gdouble altitude,
-	gdouble speed, gdouble direction, gdouble accuracy, gpointer userdata)
+								gdouble speed, gdouble direction, gdouble accuracy, gpointer userdata)
 {
 	lbs_server_s *lbs_server = (lbs_server_s *)userdata;
 
@@ -1529,12 +1495,18 @@ static void set_mock_location_cb(gint method, gdouble latitude, gdouble longitud
 		LOG_MOCK(DBG_ERR, "lbs-server is NULL!!");
 		return;
 	}
-	LOG_SEC("Input lat = %lf, lng = %lf", latitude, longitude);
+	LOG_SEC("[set_mock_location]  lat = %lf, lng = %lf", latitude, longitude);
 	memset(&g_mock_position, 0x00, sizeof(NpsManagerPositionExt));
 	if (latitude == MOCK_LOCATION_CLEAR_VALUE) {
-		LOG_MOCK(DBG_LOW, "MOCK Location is cleared");
-		mock_set_status(lbs_server, LBS_STATUS_ACQUIRING);
-		return;
+		if (lbs_server->is_mock_running) {
+			g_mutex_lock(&lbs_server->mutex);
+			lbs_server->is_mock_running = FALSE;
+			g_mutex_unlock(&lbs_server->mutex);
+
+			mock_stop_tracking(lbs_server);
+			g_mock_position.timestamp = 0;
+		}
+		return ;
 	}
 
 	time_t timestamp;
@@ -1550,7 +1522,16 @@ static void set_mock_location_cb(gint method, gdouble latitude, gdouble longitud
 	g_mock_position.hor_accuracy = accuracy;
 	g_mock_position.ver_accuracy = -1;
 
-	LOG_SEC("[%d] lat = %lf, lng = %lf", g_mock_position.timestamp, g_mock_position.latitude, g_mock_position.longitude);
+	if (lbs_server->is_mock_running == FALSE) {
+		g_mutex_lock(&lbs_server->mutex);
+		lbs_server->is_mock_running = TRUE;
+		g_mutex_unlock(&lbs_server->mutex);
+	}
+
+	if (lbs_server->is_gps_running)
+		mock_start_tracking(lbs_server);
+
+	gps_set_last_mock(timestamp, latitude, longitude, altitude, speed, direction, accuracy);
 }
 
 int __copy_mock_location(lbs_server_s *lbs_server)
@@ -1560,26 +1541,26 @@ int __copy_mock_location(lbs_server_s *lbs_server)
 		return FALSE;
 	}
 
-	memset(&lbs_server->mock_position, 0x00, sizeof(NpsManagerPositionExt));
-	memcpy(&lbs_server->mock_position, &g_mock_position, sizeof(NpsManagerPositionExt));
+	memset(&lbs_server->mock_pos, 0x00, sizeof(NpsManagerPositionExt));
+	memcpy(&lbs_server->mock_pos, &g_mock_position, sizeof(NpsManagerPositionExt));
 	g_mock_position.fields = LBS_POSITION_EXT_FIELDS_NONE;
-	LOG_SEC("[%ld] lat = %lf, lng = %lf", lbs_server->mock_position.timestamp, lbs_server->mock_position.latitude, lbs_server->mock_position.longitude);
+	LOG_SEC("[%ld] lat = %lf, lng = %lf", lbs_server->mock_pos.timestamp, lbs_server->mock_pos.latitude, lbs_server->mock_pos.longitude);
 
-	if (lbs_server->mock_position.latitude >= -90 && lbs_server->mock_position.latitude <= 90)
-		lbs_server->mock_position.fields |= LBS_POSITION_EXT_FIELDS_LATITUDE;
+	if (lbs_server->mock_pos.latitude >= -90 && lbs_server->mock_pos.latitude <= 90)
+		lbs_server->mock_pos.fields |= LBS_POSITION_EXT_FIELDS_LATITUDE;
 
-	if (lbs_server->mock_position.longitude >= -180 && lbs_server->mock_position.longitude <= 180)
-		lbs_server->mock_position.fields |= LBS_POSITION_EXT_FIELDS_LONGITUDE;
+	if (lbs_server->mock_pos.longitude >= -180 && lbs_server->mock_pos.longitude <= 180)
+		lbs_server->mock_pos.fields |= LBS_POSITION_EXT_FIELDS_LONGITUDE;
 
-	lbs_server->mock_position.fields |= LBS_POSITION_EXT_FIELDS_ALTITUDE;
+	lbs_server->mock_pos.fields |= LBS_POSITION_EXT_FIELDS_ALTITUDE;
 
-	if (lbs_server->mock_position.speed >= 0)
-		lbs_server->mock_position.fields |= LBS_POSITION_EXT_FIELDS_SPEED;
+	if (lbs_server->mock_pos.speed >= 0)
+		lbs_server->mock_pos.fields |= LBS_POSITION_EXT_FIELDS_SPEED;
 
-	if (lbs_server->mock_position.direction >= 0 && lbs_server->mock_position.direction <= 360)
-		lbs_server->mock_position.fields |= LBS_POSITION_EXT_FIELDS_DIRECTION;
+	if (lbs_server->mock_pos.direction >= 0 && lbs_server->mock_pos.direction <= 360)
+		lbs_server->mock_pos.fields |= LBS_POSITION_EXT_FIELDS_DIRECTION;
 
-	lbs_server->mock_accuracy = g_variant_ref_sink(g_variant_new("(idd)", LBS_ACCURACY_LEVEL_DETAILED, lbs_server->mock_position.hor_accuracy, -1));
+	lbs_server->mock_accuracy = g_variant_ref_sink(g_variant_new("(idd)", LBS_ACCURACY_LEVEL_DETAILED, lbs_server->mock_pos.hor_accuracy, -1));
 
 	return TRUE;
 }
@@ -1593,30 +1574,20 @@ static gboolean __mock_position_update_cb(gpointer userdata)
 		return FALSE;
 	}
 
-	if (lbs_server->mock_status == LBS_STATUS_ACQUIRING) {
-		if (g_mock_position.timestamp) {
+	if (g_mock_position.timestamp) {
+		if (g_mock_position.fields & LBS_POSITION_EXT_FIELDS_DIRTY)
 			__copy_mock_location(lbs_server);
-			mock_set_status(lbs_server, LBS_STATUS_AVAILABLE);
-		}
-	} else if (lbs_server->mock_status == LBS_STATUS_AVAILABLE) {
-		if (g_mock_position.timestamp) {
-			if (g_mock_position.fields & LBS_POSITION_EXT_FIELDS_DIRTY)
-				__copy_mock_location(lbs_server);
 
-			time_t timestamp;
-			time(&timestamp);
+		time_t timestamp;
+		time(&timestamp);
 
-			LOG_SEC("[%d] lat = %lf, lng = %lf", lbs_server->mock_position.timestamp,
-				lbs_server->mock_position.latitude, lbs_server->mock_position.longitude);
+		LOG_SEC("[%d] lat = %lf, lng = %lf", lbs_server->mock_pos.timestamp, lbs_server->mock_pos.latitude, lbs_server->mock_pos.longitude);
 
-			lbs_server->mock_position.timestamp = timestamp;
-			lbs_server_emit_position_changed(lbs_server->lbs_dbus_server, LBS_SERVER_METHOD_MOCK,
-											lbs_server->mock_position.fields, lbs_server->mock_position.timestamp,
-											lbs_server->mock_position.latitude,	lbs_server->mock_position.longitude, lbs_server->mock_position.altitude,
-											lbs_server->mock_position.speed, lbs_server->mock_position.direction, 0.0, lbs_server->mock_accuracy);
-		} else {
-			mock_set_status(lbs_server, LBS_STATUS_ACQUIRING);
-		}
+		lbs_server->mock_pos.timestamp = timestamp;
+		lbs_server_emit_position_changed(lbs_server->lbs_dbus_server, LBS_SERVER_METHOD_MOCK,
+				lbs_server->mock_pos.fields, lbs_server->mock_pos.timestamp,
+				lbs_server->mock_pos.latitude,	lbs_server->mock_pos.longitude, lbs_server->mock_pos.altitude,
+				lbs_server->mock_pos.speed, lbs_server->mock_pos.direction, 0.0, lbs_server->mock_accuracy);
 	}
 
 	return TRUE;
@@ -1624,14 +1595,13 @@ static gboolean __mock_position_update_cb(gpointer userdata)
 
 static gboolean mock_start_tracking(lbs_server_s *lbs_server)
 {
-	LOG_MOCK(DBG_LOW, "ENTER >>>");
+	LOG_MOCK(DBG_LOW, "ENTER >>> mock_start_tracking");
 	if (!lbs_server) {
 		LOG_MOCK(DBG_ERR, "lbs_server is NULL!!");
 		return FALSE;
 	}
 
 	__copy_mock_location(lbs_server);
-	mock_set_status(lbs_server, LBS_STATUS_ACQUIRING);
 
 	if (!lbs_server->mock_timer)
 		lbs_server->mock_timer = g_timeout_add_seconds(1, __mock_position_update_cb, lbs_server);
@@ -1641,15 +1611,18 @@ static gboolean mock_start_tracking(lbs_server_s *lbs_server)
 
 static int mock_stop_tracking(lbs_server_s *lbs_server)
 {
-	LOG_MOCK(DBG_LOW, "ENTER >>>");
+	LOG_MOCK(DBG_LOW, ">>> mock_stop_tracking");
 	if (!lbs_server) {
 		LOG_MOCK(DBG_ERR, "lbs-server is NULL!!");
 		return FALSE;
 	}
 
-	if (lbs_server->mock_timer) g_source_remove(lbs_server->mock_timer);
+	if (lbs_server->mock_timer)
+		g_source_remove(lbs_server->mock_timer);
+
 	lbs_server->mock_timer = 0;
-	g_variant_unref(lbs_server->mock_accuracy);
+	if (lbs_server->mock_accuracy)
+		g_variant_unref(lbs_server->mock_accuracy);
 
 	if (lbs_server->is_mock_running) {
 		g_mutex_lock(&lbs_server->mutex);
@@ -1657,64 +1630,7 @@ static int mock_stop_tracking(lbs_server_s *lbs_server)
 		g_mutex_unlock(&lbs_server->mutex);
 	}
 
-	mock_set_status(lbs_server, LBS_STATUS_UNAVAILABLE);
-
 	return 0;
-}
-
-static void mock_set_status(lbs_server_s *lbs_server, LbsStatus status)
-{
-	if (!lbs_server) {
-		LOG_MOCK(DBG_ERR, "lbs_server is NULL!!");
-		return;
-	}
-	LOG_MOCK(DBG_LOW, "Previous status: %d, Current status: %d", lbs_server->mock_status, status);
-	if (lbs_server->mock_status == status) {
-		LOG_MOCK(DBG_ERR, "Don't update MOCK status");
-		return;
-	}
-
-	lbs_server->mock_status = status;
-
-	if (lbs_server->mock_status == LBS_STATUS_AVAILABLE)
-		setting_set_int(VCONFKEY_LOCATION_MOCK_STATE, POSITION_CONNECTED);
-	else if (lbs_server->mock_status == LBS_STATUS_ACQUIRING)
-		setting_set_int(VCONFKEY_LOCATION_MOCK_STATE, POSITION_SEARCHING);
-	else
-		setting_set_int(VCONFKEY_LOCATION_MOCK_STATE, POSITION_OFF);
-
-	lbs_server_emit_status_changed(lbs_server->lbs_dbus_server, LBS_SERVER_METHOD_MOCK, status);
-}
-
-static gboolean mock_remove_all_clients(lbs_server_s *lbs_server)
-{
-	LOG_MOCK(DBG_LOW, "remove_all_clients MOCK");
-	if (lbs_server->mock_client_count <= 0) {
-		lbs_server->mock_client_count = 0;
-		return FALSE;
-	}
-
-	lbs_server->mock_client_count = 0;
-	stop_tracking(lbs_server, LBS_SERVER_METHOD_MOCK);
-
-	return TRUE;
-}
-
-static void __setting_mock_cb(keynode_t *key, gpointer user_data)
-{
-	LOG_MOCK(DBG_LOW, "ENTER >>>");
-	lbs_server_s *lbs_server = (lbs_server_s *)user_data;
-	int onoff = 0;
-	gboolean ret = FALSE;
-
-	setting_get_int(VCONFKEY_LOCATION_MOCK_ENABLED, &onoff);
-
-	if (onoff == 0) {
-		ret = mock_remove_all_clients(lbs_server);
-
-		if (ret == FALSE)
-			LOG_MOCK(DBG_LOW, "already removed.");
-	}
 }
 
 #ifndef TIZEN_DEVICE

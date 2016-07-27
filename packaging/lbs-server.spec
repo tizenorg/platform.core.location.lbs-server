@@ -126,7 +126,6 @@ rm -rf %{buildroot}
 %files -n location-lbs-server
 %manifest location-lbs-server.manifest
 %{_libdir}/location/module/libgps.so*
-%{_libdir}/location/module/libmock.so*
 
 %if 0%{?model_build_feature_location_position_wps}
 %{_libdir}/location/module/libwps.so*

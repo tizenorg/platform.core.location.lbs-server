@@ -131,3 +131,15 @@ void gps_get_last_position(pos_data_t *last_pos)
 
 	LOG_GPS(DBG_LOW, "get_last_position[%d]", last_pos->timestamp);
 }
+
+void gps_set_last_mock(int timestamp, double lat, double lon, double alt, double spd, double dir, double h_acc)
+{
+	setting_set_int(VCONFKEY_LOCATION_LAST_GPS_TIMESTAMP, timestamp);
+	setting_set_double(VCONFKEY_LOCATION_LAST_GPS_LATITUDE, lat);
+	setting_set_double(VCONFKEY_LOCATION_LAST_GPS_LONGITUDE, lon);
+	setting_set_double(VCONFKEY_LOCATION_LAST_GPS_ALTITUDE, alt);
+	setting_set_double(VCONFKEY_LOCATION_LAST_GPS_SPEED, spd);
+	setting_set_double(VCONFKEY_LOCATION_LAST_GPS_DIRECTION, dir);
+	setting_set_double(VCONFKEY_LOCATION_LAST_GPS_HOR_ACCURACY, h_acc);
+}
+

@@ -83,8 +83,10 @@ static void position_callback(GVariant *param, void *user_data)
 	g_variant_get(param, "(iiidddddd@(idd))", &method, &fields, &timestamp, &latitude, &longitude, &altitude, &speed, &direction, &climb, &accuracy);
 
 	MOD_NPS_LOGD("method: %d", method);
-	if (method != LBS_CLIENT_METHOD_NPS)
-		return;
+	if (method != LBS_CLIENT_METHOD_NPS) {
+		if (method != LBS_CLIENT_METHOD_MOCK)
+			return;
+	}
 
 	g_variant_get(accuracy, "(idd)", &level, &horizontal, &vertical);
 
