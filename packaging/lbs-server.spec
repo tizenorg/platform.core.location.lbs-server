@@ -1,6 +1,6 @@
 Name:    lbs-server
 Summary: LBS Server for Tizen
-Version: 1.0.5
+Version: 1.0.6
 Release: 1
 Group:   Location/Service
 License: Apache-2.0

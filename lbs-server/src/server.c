@@ -68,6 +68,7 @@
 #define BRCM47520_PATH	PLATFORM_PATH"/bcm47520"
 #define BRCM47511_PATH	PLATFORM_PATH"/bcm47511"
 #define BRCM47522_PATH	PLATFORM_PATH"/bcm47522"
+#define BRCM477_PATH	PLATFORM_PATH"/gps"
 #define CSR_PATH		PLATFORM_PATH"/gsd4t"
 #define QCOM8210_PATH	PLATFORM_PATH"/msm8210_gps"
 #define QCOM8x30_PATH	PLATFORM_PATH"/msm8x30_gps"
@@ -1086,7 +1087,7 @@ void check_plugin_module(char *module_name)
 		g_strlcpy(module_name, "replay", strlen("replay") + 1);
 		LOG_GPS(DBG_LOW, "REPLAY_ENABELD is TRUE");
 	} else if (access(BRCM4752_PATH, F_OK) == 0 || access(BRCM47520_PATH, F_OK) == 0 ||
-				access(BRCM47522_PATH, F_OK) == 0) {
+				access(BRCM47522_PATH, F_OK) == 0 || access(BRCM477_PATH, F_OK) == 0) {
 		g_strlcpy(module_name, "brcm", strlen("brcm") + 1);
 	} else if (access(BRCM47511_PATH, F_OK) == 0) {
 		g_strlcpy(module_name, "brcm-legacy", strlen("brcm-legacy") + 1);
@@ -1098,6 +1099,7 @@ void check_plugin_module(char *module_name)
 		g_strlcpy(module_name, "qcom", strlen("qcom") + 1);
 	} else {
 		g_strlcpy(module_name, "replay", strlen("replay") + 1);
+		LOG_GPS(DBG_LOW, "There is no gps module");
 	}
 
 	LOG_GPS(DBG_LOW, ">> module name : %s", module_name);
